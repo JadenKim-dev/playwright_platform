@@ -35,14 +35,21 @@ const fakeEnv: PlatformEnv = {
 function makeTestCase() {
   return {} as unknown;
 }
-function makeTestResult(partial: Partial<{ status: string; duration: number; error: { message: string } }> = {}) {
+function makeTestResult(
+  partial: Partial<{ status: string; duration: number; error: { message: string } }> = {},
+) {
   return {
     status: partial.status ?? 'passed',
     duration: partial.duration ?? 0,
     error: partial.error,
   } as unknown;
 }
-function makeStep(category: string, title = 'step title', duration = 10, error?: { message: string }) {
+function makeStep(
+  category: string,
+  title = 'step title',
+  duration = 10,
+  error?: { message: string },
+) {
   return { category, title, duration, error } as unknown;
 }
 
@@ -166,7 +173,9 @@ describe('StreamingReporter', () => {
     const batch = client.postEvents.mock.calls[0][0] as ReporterEventBatch;
     const testEndEvent = batch.events.find((e) => e.type === ReporterEventType.TestEnd);
     expect(testEndEvent).toBeDefined();
-    expect((testEndEvent as { payload: { errorMessage?: string } }).payload.errorMessage).toBe('boom');
+    expect((testEndEvent as { payload: { errorMessage?: string } }).payload.errorMessage).toBe(
+      'boom',
+    );
     expect(client.updateItemStatus.mock.calls[0][0]).toEqual({
       status: RunItemStatus.Failed,
       durationMs: 55,

@@ -29,7 +29,11 @@ export function loadPlatformEnv(source: NodeJS.ProcessEnv = process.env): Platfo
     itemId: required(source, 'PLATFORM_ITEM_ID'),
     adminUrl: required(source, 'PLATFORM_ADMIN_URL'),
     internalApiToken: required(source, 'PLATFORM_INTERNAL_API_TOKEN'),
-    reporterChunkSize: parseInt(source.PLATFORM_REPORTER_CHUNK_SIZE, DEFAULT_CHUNK_SIZE, 'PLATFORM_REPORTER_CHUNK_SIZE'),
+    reporterChunkSize: parseInt(
+      source.PLATFORM_REPORTER_CHUNK_SIZE,
+      DEFAULT_CHUNK_SIZE,
+      'PLATFORM_REPORTER_CHUNK_SIZE',
+    ),
     reporterFlushIntervalMs: parseInt(
       source.PLATFORM_REPORTER_FLUSH_INTERVAL_MS,
       DEFAULT_FLUSH_INTERVAL_MS,

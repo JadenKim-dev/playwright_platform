@@ -42,8 +42,8 @@ describe('loadPlatformEnv', () => {
   });
 
   it('throws when a numeric env contains a non-numeric value', () => {
-    expect(() =>
-      loadPlatformEnv({ ...baseEnv, PLATFORM_REPORTER_CHUNK_SIZE: 'abc' }),
-    ).toThrow(/PLATFORM_REPORTER_CHUNK_SIZE/);
+    expect(() => loadPlatformEnv({ ...baseEnv, PLATFORM_REPORTER_CHUNK_SIZE: 'abc' })).toThrow(
+      /PLATFORM_REPORTER_CHUNK_SIZE/,
+    );
   });
 });

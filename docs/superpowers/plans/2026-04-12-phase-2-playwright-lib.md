@@ -10,7 +10,7 @@
 
 **Architecture:** `@platform/shared`에서 정의한 타입(`ReporterEvent`, `ResolvedTestCaseDto`, `ReporterEventBatch`)을 재사용. 런타임 의존성: `@playwright/test`(peerDependency), `@platform/shared`. 환경변수(`PLATFORM_RUN_ID`, `PLATFORM_ITEM_ID`, `PLATFORM_ADMIN_URL`, `PLATFORM_INTERNAL_API_TOKEN`, `PLATFORM_REPORTER_CHUNK_SIZE`, `PLATFORM_REPORTER_FLUSH_INTERVAL_MS`)로 러너에서 주입. 테스트는 Node 내장 fetch를 mock(globalThis.fetch)하고 Playwright Reporter 이벤트는 수동으로 호출해 버퍼/플러시 경로를 검증.
 
-**Tech Stack:** TypeScript 5.x (NodeNext), Vitest, `@playwright/test` (peerDep — 설치는 하되 dev로), `@platform/shared`(workspace:*).
+**Tech Stack:** TypeScript 5.x (NodeNext), Vitest, `@playwright/test` (peerDep — 설치는 하되 dev로), `@platform/shared`(workspace:\*).
 
 ---
 
@@ -131,6 +131,7 @@ pnpm install
 pnpm --filter @platform/playwright-lib build
 pnpm --filter @platform/shared build
 ```
+
 Expected: 두 패키지 모두 에러 없이 빌드.
 
 - [ ] **Step 6: 커밋**
@@ -154,6 +155,7 @@ git commit -m "feat(playwright-lib): scaffold package"
 - [ ] **Step 1: RED — 테스트 먼저 작성 (`tests/env.test.ts`)**
 
 검증 항목:
+
 1. 모든 필수 env(`PLATFORM_RUN_ID`, `PLATFORM_ITEM_ID`, `PLATFORM_ADMIN_URL`, `PLATFORM_INTERNAL_API_TOKEN`)가 있으면 객체 반환.
 2. 필수 env 누락 시 메시지에 env 이름을 포함한 `Error` throw.
 3. `PLATFORM_REPORTER_CHUNK_SIZE` 미설정 시 기본값 `50`.
@@ -167,6 +169,7 @@ git commit -m "feat(playwright-lib): scaffold package"
 ```bash
 pnpm --filter @platform/playwright-lib test
 ```
+
 Expected: "Failed to resolve import ... env.js" 또는 "loadPlatformEnv is not a function" 등으로 실패.
 
 - [ ] **Step 3: GREEN — `src/env.ts` 구현**
@@ -203,7 +206,11 @@ export function loadPlatformEnv(source: NodeJS.ProcessEnv = process.env): Platfo
     itemId: required(source, 'PLATFORM_ITEM_ID'),
     adminUrl: required(source, 'PLATFORM_ADMIN_URL'),
     internalApiToken: required(source, 'PLATFORM_INTERNAL_API_TOKEN'),
-    reporterChunkSize: parseInt(source.PLATFORM_REPORTER_CHUNK_SIZE, DEFAULT_CHUNK_SIZE, 'PLATFORM_REPORTER_CHUNK_SIZE'),
+    reporterChunkSize: parseInt(
+      source.PLATFORM_REPORTER_CHUNK_SIZE,
+      DEFAULT_CHUNK_SIZE,
+      'PLATFORM_REPORTER_CHUNK_SIZE',
+    ),
     reporterFlushIntervalMs: parseInt(
       source.PLATFORM_REPORTER_FLUSH_INTERVAL_MS,
       DEFAULT_FLUSH_INTERVAL_MS,
@@ -218,6 +225,7 @@ export function loadPlatformEnv(source: NodeJS.ProcessEnv = process.env): Platfo
 ```bash
 pnpm --filter @platform/playwright-lib test
 ```
+
 Expected: env 관련 테스트 모두 통과.
 
 - [ ] **Step 5: 커밋**
@@ -272,6 +280,7 @@ git commit -m "feat(playwright-lib): parse PLATFORM_* env with defaults and vali
 ```bash
 pnpm --filter @platform/playwright-lib test
 ```
+
 Expected: client 테스트 모두 실패.
 
 - [ ] **Step 3: GREEN — `src/client.ts` 구현**
@@ -371,6 +380,7 @@ class NonRetriableError extends Error {}
 pnpm --filter @platform/playwright-lib test
 pnpm --filter @platform/playwright-lib build
 ```
+
 Expected: 테스트 전부 통과, 빌드 성공.
 
 - [ ] **Step 5: 커밋**
@@ -418,6 +428,7 @@ git commit -m "feat(playwright-lib): AdminClient with retry, timeout, and intern
 ```bash
 pnpm --filter @platform/playwright-lib test
 ```
+
 Expected: test-case 관련 테스트 실패.
 
 - [ ] **Step 3: GREEN — `src/test-case.ts` 구현**
@@ -435,7 +446,9 @@ export interface PlatformFixtures {
 
 // Playwright의 fixture 타입을 전체로 쓰기엔 복잡하므로, 사용자 콜백은
 // 최소한 page만 있다고 가정한 형태로 좁게 선언. any/unknown은 피하고 제네릭으로 받음.
-export type TestCaseCallback<Fixtures> = (args: Fixtures & PlatformFixtures) => Promise<void> | void;
+export type TestCaseCallback<Fixtures> = (
+  args: Fixtures & PlatformFixtures,
+) => Promise<void> | void;
 
 export interface TestCaseDeps {
   test: typeof defaultTest;
@@ -475,6 +488,7 @@ export const testCase = createTestCase({
 pnpm --filter @platform/playwright-lib test
 pnpm --filter @platform/playwright-lib build
 ```
+
 Expected: test-case 테스트 통과, 빌드 성공.
 
 - [ ] **Step 5: 커밋**
@@ -540,6 +554,7 @@ git commit -m "feat(playwright-lib): testCase() wrapper resolves params/expected
 ```bash
 pnpm --filter @platform/playwright-lib test
 ```
+
 Expected: 2개 새 테스트 실패 (`updateItemStatus is not a function` 등).
 
 - [ ] **Step 0-GREEN: `src/client.ts`에 `updateItemStatus` 구현**
@@ -577,6 +592,7 @@ async updateItemStatus(body: RunItemStatusUpdateDto): Promise<void> {
 pnpm --filter @platform/playwright-lib test
 pnpm --filter @platform/playwright-lib build
 ```
+
 Expected: 전체 통과 (env 5 + client 10 + test-case 5 = 20).
 
 - [ ] **Step 0-commit**
@@ -608,6 +624,7 @@ git commit -m "feat(playwright-lib): add AdminClient.updateItemStatus and itemId
 ```bash
 pnpm --filter @platform/playwright-lib test
 ```
+
 Expected: reporter 테스트 실패.
 
 - [ ] **Step 3: GREEN — `src/reporter.ts` 구현**
@@ -615,7 +632,13 @@ Expected: reporter 테스트 실패.
 주요 설계:
 
 ```ts
-import type { Reporter, TestCase, TestResult, TestStep, FullResult } from '@playwright/test/reporter';
+import type {
+  Reporter,
+  TestCase,
+  TestResult,
+  TestStep,
+  FullResult,
+} from '@playwright/test/reporter';
 import {
   ReporterEventType,
   RunItemStatus,
@@ -661,11 +684,12 @@ export class StreamingReporter implements Reporter {
       });
     this.chunkSize = options.chunkSize ?? this.env.reporterChunkSize;
     this.flushIntervalMs = options.flushIntervalMs ?? this.env.reporterFlushIntervalMs;
-    this.onFatal = options.onFatal ?? ((err) => {
-       
-      console.error('[StreamingReporter] fatal:', err);
-      process.exit(1);
-    });
+    this.onFatal =
+      options.onFatal ??
+      ((err) => {
+        console.error('[StreamingReporter] fatal:', err);
+        process.exit(1);
+      });
     this.now = options.now ?? (() => new Date());
   }
 
@@ -808,6 +832,7 @@ export default StreamingReporter;
 pnpm --filter @platform/playwright-lib test
 pnpm --filter @platform/playwright-lib build
 ```
+
 Expected: 전체 reporter 테스트 통과, 빌드 성공.
 
 - [ ] **Step 5: 커밋**
@@ -831,7 +856,12 @@ git commit -m "feat(playwright-lib): StreamingReporter with chunked buffer and i
 ```ts
 export { loadPlatformEnv, type PlatformEnv } from './env.js';
 export { AdminClient, type AdminClientOptions } from './client.js';
-export { testCase, createTestCase, type TestCaseCallback, type PlatformFixtures } from './test-case.js';
+export {
+  testCase,
+  createTestCase,
+  type TestCaseCallback,
+  type PlatformFixtures,
+} from './test-case.js';
 export { StreamingReporter, type StreamingReporterOptions } from './reporter.js';
 ```
 
@@ -839,7 +869,7 @@ export { StreamingReporter, type StreamingReporterOptions } from './reporter.js'
 
 `README.md`에 "Phase 2 — playwright-lib" 한 섹션 추가:
 
-```
+````
 ## Phase 2 — @platform/playwright-lib
 
 External test repos import this package to use `testCase()` and the streaming reporter.
@@ -848,8 +878,9 @@ External test repos import this package to use `testCase()` and the streaming re
 ```bash
 pnpm --filter @platform/playwright-lib test
 pnpm --filter @platform/playwright-lib build
-```
-```
+````
+
+````
 
 - [ ] **Step 3: 최종 verification (루트에서)**
 
@@ -859,7 +890,8 @@ pnpm -r build
 pnpm -r test
 pnpm lint
 pnpm format:check
-```
+````
+
 Expected: 모두 통과.
 
 - [ ] **Step 4: 커밋**

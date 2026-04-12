@@ -34,18 +34,16 @@ describe('AdminClient', () => {
   });
 
   it('resolve calls correct URL and headers and parses JSON', async () => {
-    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(
-      jsonResponse({ params: { a: 1 }, expected: { b: 2 } }),
-    );
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(jsonResponse({ params: { a: 1 }, expected: { b: 2 } }));
     const client = new AdminClient({ ...baseOpts, fetchFn });
 
     const result = await client.resolve('TC-001');
 
     expect(fetchFn).toHaveBeenCalledTimes(1);
     const [url, init] = fetchFn.mock.calls[0];
-    expect(url).toBe(
-      'http://admin.local/internal/runs/run-1/test-case/TC-001/resolve',
-    );
+    expect(url).toBe('http://admin.local/internal/runs/run-1/test-case/TC-001/resolve');
     expect(init?.method).toBe('GET');
     const headers = init?.headers as Record<string, string>;
     expect(headers['Content-Type']).toBe('application/json');
@@ -98,9 +96,7 @@ describe('AdminClient', () => {
   });
 
   it('throws immediately on 4xx without retry', async () => {
-    const fetchFn = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(new Response('bad', { status: 400 }));
+    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(new Response('bad', { status: 400 }));
     const client = new AdminClient({ ...baseOpts, maxRetries: 3, fetchFn });
 
     await expect(client.resolve('TC-001')).rejects.toThrow();

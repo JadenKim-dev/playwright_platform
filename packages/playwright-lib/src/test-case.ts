@@ -19,7 +19,9 @@ export type PlaywrightFixtures = PlaywrightTestArgs &
   PlaywrightWorkerArgs &
   PlaywrightWorkerOptions;
 
-export type TestCaseCallback = (args: PlaywrightFixtures & PlatformFixtures) => Promise<void> | void;
+export type TestCaseCallback = (
+  args: PlaywrightFixtures & PlatformFixtures,
+) => Promise<void> | void;
 
 export interface TestCaseDeps {
   test: typeof defaultTest;

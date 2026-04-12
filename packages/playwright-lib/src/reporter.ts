@@ -1,4 +1,10 @@
-import type { Reporter, TestCase, TestResult, TestStep, FullResult } from '@playwright/test/reporter';
+import type {
+  Reporter,
+  TestCase,
+  TestResult,
+  TestStep,
+  FullResult,
+} from '@playwright/test/reporter';
 import {
   ReporterEventType,
   RunItemStatus,
@@ -44,11 +50,12 @@ export class StreamingReporter implements Reporter {
       });
     this.chunkSize = options.chunkSize ?? this.env.reporterChunkSize;
     this.flushIntervalMs = options.flushIntervalMs ?? this.env.reporterFlushIntervalMs;
-    this.onFatal = options.onFatal ?? ((err) => {
-
-      console.error('[StreamingReporter] fatal:', err);
-      process.exit(1);
-    });
+    this.onFatal =
+      options.onFatal ??
+      ((err) => {
+        console.error('[StreamingReporter] fatal:', err);
+        process.exit(1);
+      });
     this.now = options.now ?? (() => new Date());
   }
 
