@@ -47,6 +47,7 @@ Phase 1에서 생성/수정하는 파일:
 ### Task 1: pnpm 및 Node 버전 고정
 
 **Files:**
+
 - Create: `.nvmrc`
 - Create: `.editorconfig`
 
@@ -90,6 +91,7 @@ git commit -m "chore: pin node 20 and add editor config"
 ### Task 2: 루트 `package.json` 및 pnpm workspace 설정
 
 **Files:**
+
 - Create: `package.json`
 - Create: `pnpm-workspace.yaml`
 
@@ -128,7 +130,7 @@ git commit -m "chore: pin node 20 and add editor config"
 
 ```yaml
 packages:
-  - "packages/*"
+  - 'packages/*'
 ```
 
 - [ ] **Step 3: 의존성 설치**
@@ -148,6 +150,7 @@ git commit -m "chore: initialize pnpm workspace with node 20 toolchain"
 ### Task 3: TypeScript 공용 설정
 
 **Files:**
+
 - Create: `tsconfig.base.json`
 
 - [ ] **Step 1: `tsconfig.base.json` 작성**
@@ -189,6 +192,7 @@ git commit -m "chore: add shared tsconfig base"
 ### Task 4: Prettier 설정
 
 **Files:**
+
 - Create: `.prettierrc.json`
 - Create: `.prettierignore`
 
@@ -234,6 +238,7 @@ git commit -m "chore: configure prettier"
 ### Task 5: ESLint 설정
 
 **Files:**
+
 - Create: `.eslintrc.cjs`
 - Create: `.eslintignore`
 
@@ -248,11 +253,7 @@ module.exports = {
     sourceType: 'module',
   },
   plugins: ['@typescript-eslint'],
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'prettier',
-  ],
+  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'],
   env: {
     node: true,
     es2022: true,
@@ -293,6 +294,7 @@ git commit -m "chore: configure eslint"
 ### Task 6: Vitest 루트 설정
 
 **Files:**
+
 - Create: `vitest.config.ts`
 
 - [ ] **Step 1: `vitest.config.ts` 작성**
@@ -327,6 +329,7 @@ git commit -m "chore: configure vitest at repo root"
 ### Task 7: `.gitignore` 보강
 
 **Files:**
+
 - Modify: `.gitignore`
 
 - [ ] **Step 1: 현재 `.gitignore` 내용 확인**
@@ -385,6 +388,7 @@ git commit -m "chore: expand gitignore for node, env, docker"
 ### Task 8: `.env.example` 작성
 
 **Files:**
+
 - Create: `.env.example`
 
 - [ ] **Step 1: `.env.example` 작성**
@@ -439,6 +443,7 @@ git commit -m "chore: add .env.example template"
 ### Task 9: Docker Compose 인프라 정의 (MySQL/RabbitMQ/MinIO만)
 
 **Files:**
+
 - Create: `docker-compose.yml`
 
 - [ ] **Step 1: `docker-compose.yml` 작성**
@@ -458,11 +463,12 @@ services:
       --collation-server=utf8mb4_unicode_ci
       --default-time-zone=+00:00
     ports:
-      - "3306:3306"
+      - '3306:3306'
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test:
+        ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-u', 'root', '-p${MYSQL_ROOT_PASSWORD}']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -470,12 +476,12 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - '5672:5672'
+      - '15672:15672'
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -487,12 +493,12 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     volumes:
       - minio-data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -540,6 +546,7 @@ git commit -m "chore: docker compose for mysql, rabbitmq, minio"
 ### Task 10: `packages/shared` 패키지 뼈대
 
 **Files:**
+
 - Create: `packages/shared/package.json`
 - Create: `packages/shared/tsconfig.json`
 - Create: `packages/shared/src/index.ts`
@@ -605,6 +612,7 @@ git commit -m "feat(shared): scaffold package with build pipeline"
 ### Task 11: `shared` 상수 — statuses
 
 **Files:**
+
 - Create: `packages/shared/src/constants/statuses.ts`
 - Test: `packages/shared/tests/constants.test.ts`
 
@@ -612,11 +620,7 @@ git commit -m "feat(shared): scaffold package with build pipeline"
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import {
-  DeploymentStatus,
-  RunStatus,
-  RunItemStatus,
-} from '../src/constants/statuses.js';
+import { DeploymentStatus, RunStatus, RunItemStatus } from '../src/constants/statuses.js';
 
 describe('statuses', () => {
   it('DeploymentStatus covers full pipeline lifecycle', () => {
@@ -639,14 +643,7 @@ describe('statuses', () => {
 
   it('RunItemStatus has pending/running/passed/failed/skipped/timedout', () => {
     const values = Object.values(RunItemStatus);
-    expect(values).toEqual([
-      'pending',
-      'running',
-      'passed',
-      'failed',
-      'skipped',
-      'timedout',
-    ]);
+    expect(values).toEqual(['pending', 'running', 'passed', 'failed', 'skipped', 'timedout']);
   });
 });
 ```
@@ -707,6 +704,7 @@ git commit -m "feat(shared): add deployment/run/item status enums"
 ### Task 12: `shared` 상수 — event types
 
 **Files:**
+
 - Create: `packages/shared/src/constants/event-types.ts`
 - Create: `packages/shared/src/constants/index.ts`
 - Modify: `packages/shared/tests/constants.test.ts`
@@ -776,6 +774,7 @@ git commit -m "feat(shared): add reporter event type constants"
 ### Task 13: `shared` 이벤트 — reporter events
 
 **Files:**
+
 - Create: `packages/shared/src/events/reporter-events.ts`
 - Create: `packages/shared/tests/events.test.ts`
 
@@ -946,6 +945,7 @@ git commit -m "feat(shared): define reporter event types"
 ### Task 14: `shared` 이벤트 — queue messages
 
 **Files:**
+
 - Create: `packages/shared/src/events/queue-messages.ts`
 - Create: `packages/shared/src/events/index.ts`
 - Modify: `packages/shared/tests/events.test.ts`
@@ -1028,6 +1028,7 @@ git commit -m "feat(shared): define queue message schema and routing constants"
 ### Task 15: `shared` DTOs — test case
 
 **Files:**
+
 - Create: `packages/shared/src/dto/test-case.ts`
 
 - [ ] **Step 1: `src/dto/test-case.ts` 작성 (타입만이므로 단위 테스트는 선택적)**
@@ -1078,6 +1079,7 @@ git commit -m "feat(shared): add test case DTOs"
 ### Task 16: `shared` DTOs — deployment
 
 **Files:**
+
 - Create: `packages/shared/src/dto/deployment.ts`
 
 - [ ] **Step 1: `src/dto/deployment.ts` 작성**
@@ -1140,6 +1142,7 @@ git commit -m "feat(shared): add deployment DTOs"
 ### Task 17: `shared` DTOs — run
 
 **Files:**
+
 - Create: `packages/shared/src/dto/run.ts`
 - Create: `packages/shared/src/dto/index.ts`
 
@@ -1214,6 +1217,7 @@ git commit -m "feat(shared): add run DTOs"
 ### Task 18: `shared` 최종 public export
 
 **Files:**
+
 - Modify: `packages/shared/src/index.ts`
 
 - [ ] **Step 1: `src/index.ts`를 실제 export로 교체**
@@ -1241,6 +1245,7 @@ git commit -m "feat(shared): export public surface from package root"
 ### Task 19: 루트 README — Phase 1 기동 가이드
 
 **Files:**
+
 - Create: `README.md`
 
 - [ ] **Step 1: `README.md` 작성**
@@ -1306,6 +1311,7 @@ git commit -m "docs: add README with phase 1 bring-up instructions"
 ### Task 20: Phase 1 전체 검증
 
 **Files:**
+
 - (검증 전용, 파일 수정 없음)
 
 - [ ] **Step 1: clean install 재확인**
@@ -1336,6 +1342,7 @@ Expected: 모든 파일 포맷 일치.
 - [ ] **Step 6: 인프라 기동 end-to-end**
 
 Run:
+
 ```
 docker compose up -d
 sleep 20
@@ -1343,7 +1350,9 @@ docker compose ps
 docker compose logs --tail=5 mysql rabbitmq minio
 docker compose down
 ```
+
 Expected:
+
 - `docker compose ps`에서 세 서비스 모두 `healthy`
 - `logs`에서 치명적 에러 없음
 - `down`이 정상 완료
@@ -1358,6 +1367,7 @@ Expected: working tree clean.
 ## 완료 조건
 
 Phase 1 완료 시 다음이 모두 만족되어야 함:
+
 - `pnpm install` / `pnpm build` / `pnpm test` / `pnpm lint` / `pnpm format` 모두 성공
 - `packages/shared`가 빌드되어 다른 패키지가 `@platform/shared`로 import 가능한 상태
 - `docker compose up -d`로 MySQL·RabbitMQ·MinIO가 healthy 상태까지 기동
