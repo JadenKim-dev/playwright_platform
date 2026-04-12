@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { ReporterEventBatch, RunCompleteDto } from '@platform/shared';
+import type { ReporterEventBatch, RunCompleteDto, RunItemStatusUpdateDto } from '@platform/shared';
+import { RunItemStatus } from '@platform/shared';
 import { AdminClient } from '../src/client.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -16,6 +17,7 @@ function emptyResponse(status = 204): Response {
 const baseOpts = {
   adminUrl: 'http://admin.local',
   runId: 'run-1',
+  itemId: 'item-1',
   internalApiToken: 'token-xyz',
   timeoutMs: 50,
   baseBackoffMs: 1,
@@ -134,6 +136,33 @@ describe('AdminClient', () => {
     const [, init] = fetchFn.mock.calls[0];
     const headers = init?.headers as Record<string, string>;
     expect(headers['X-Internal-Token']).toBe('super-secret-token');
+  });
+
+  it('updateItemStatus POSTs to items/{itemId}/status with body and token header', async () => {
+    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(emptyResponse(204));
+    const client = new AdminClient({ ...baseOpts, fetchFn });
+
+    const body: RunItemStatusUpdateDto = { status: RunItemStatus.Passed, durationMs: 42 };
+    await client.updateItemStatus(body);
+
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchFn.mock.calls[0];
+    expect(url).toBe('http://admin.local/internal/runs/run-1/items/item-1/status');
+    expect(init?.method).toBe('POST');
+    expect(init?.body).toBe(JSON.stringify(body));
+    const headers = init?.headers as Record<string, string>;
+    expect(headers['X-Internal-Token']).toBe('token-xyz');
+    expect(headers['Content-Type']).toBe('application/json');
+  });
+
+  it('updateItemStatus URL-encodes itemId with special characters', async () => {
+    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(emptyResponse(204));
+    const client = new AdminClient({ ...baseOpts, itemId: 'item with space', fetchFn });
+
+    await client.updateItemStatus({ status: RunItemStatus.Failed });
+
+    const [url] = fetchFn.mock.calls[0];
+    expect(url).toBe('http://admin.local/internal/runs/run-1/items/item%20with%20space/status');
   });
 
   it('throws after retries exhausted when AbortError is raised repeatedly', async () => {

@@ -1,8 +1,14 @@
-import type { ReporterEventBatch, ResolvedTestCaseDto, RunCompleteDto } from '@platform/shared';
+import type {
+  ReporterEventBatch,
+  ResolvedTestCaseDto,
+  RunCompleteDto,
+  RunItemStatusUpdateDto,
+} from '@platform/shared';
 
 export interface AdminClientOptions {
   adminUrl: string;
   runId: string;
+  itemId: string;
   internalApiToken: string;
   timeoutMs?: number;
   maxRetries?: number;
@@ -13,6 +19,7 @@ export interface AdminClientOptions {
 export class AdminClient {
   private readonly adminUrl: string;
   private readonly runId: string;
+  private readonly itemId: string;
   private readonly token: string;
   private readonly timeoutMs: number;
   private readonly maxRetries: number;
@@ -22,6 +29,7 @@ export class AdminClient {
   constructor(opts: AdminClientOptions) {
     this.adminUrl = opts.adminUrl.replace(/\/$/, '');
     this.runId = opts.runId;
+    this.itemId = opts.itemId;
     this.token = opts.internalApiToken;
     this.timeoutMs = opts.timeoutMs ?? 10_000;
     this.maxRetries = opts.maxRetries ?? 3;
@@ -41,6 +49,11 @@ export class AdminClient {
 
   async complete(body: RunCompleteDto): Promise<void> {
     const url = `${this.adminUrl}/internal/runs/${encodeURIComponent(this.runId)}/complete`;
+    await this.requestJson<void>('POST', url, body);
+  }
+
+  async updateItemStatus(body: RunItemStatusUpdateDto): Promise<void> {
+    const url = `${this.adminUrl}/internal/runs/${encodeURIComponent(this.runId)}/items/${encodeURIComponent(this.itemId)}/status`;
     await this.requestJson<void>('POST', url, body);
   }
 

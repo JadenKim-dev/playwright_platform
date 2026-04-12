@@ -47,6 +47,7 @@ export const testCase = createTestCase({
     new AdminClient({
       adminUrl: env.adminUrl,
       runId: env.runId,
+      itemId: env.itemId,
       internalApiToken: env.internalApiToken,
     }),
   loadEnv: () => loadPlatformEnv(),
