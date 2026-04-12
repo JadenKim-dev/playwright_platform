@@ -67,14 +67,14 @@
 
 ### 2.2 Docker 컨테이너 구성
 
-| 서비스 | 개수 | 포트 노출 | 역할 |
-|---|---|---|---|
-| `admin` | 1 | 3000 | Next.js UI + REST API |
-| `deploy` | 1 | 4000 | NestJS 내부 API (admin이 호출) |
-| `runner` | N (scale) | 없음 | RabbitMQ consumer |
-| `mysql` | 1 | 3306 | 데이터 |
-| `rabbitmq` | 1 | 5672, 15672 | 큐 + 관리 UI |
-| `minio` | 1 | 9000, 9001 | 오브젝트 스토리지 + 콘솔 |
+| 서비스     | 개수      | 포트 노출   | 역할                           |
+| ---------- | --------- | ----------- | ------------------------------ |
+| `admin`    | 1         | 3000        | Next.js UI + REST API          |
+| `deploy`   | 1         | 4000        | NestJS 내부 API (admin이 호출) |
+| `runner`   | N (scale) | 없음        | RabbitMQ consumer              |
+| `mysql`    | 1         | 3306        | 데이터                         |
+| `rabbitmq` | 1         | 5672, 15672 | 큐 + 관리 UI                   |
+| `minio`    | 1         | 9000, 9001  | 오브젝트 스토리지 + 콘솔       |
 
 ### 2.3 주요 통신 경로
 
@@ -132,16 +132,17 @@ services:
 ## 4. 데이터 모델 (MySQL 8.0)
 
 타입 표기 주석:
+
 - `uuid` → MySQL `CHAR(36)` (MikroORM `@PrimaryKey({ type: 'uuid' })` 기본 매핑)
 - `JSON` → MySQL native JSON 컬럼
 - `bigint auto_increment` → MySQL `BIGINT AUTO_INCREMENT`
 - 배열 타입 없음 → `JSON` 컬럼에 배열 저장 (`tags`, `requested_test_case_ids`)
 - 날짜/시간 → `DATETIME(3)`, 서버는 UTC 기준
 
-
 ### 4.1 엔티티
 
 **`test_cases`** — 테스트 케이스 메타데이터 문서(최신 상태만)
+
 - `id` (text, PK) — "TC-001" 같은 문자열
 - `name`, `description`
 - `params` (JSON), `expected` (JSON)
@@ -150,6 +151,7 @@ services:
 - `created_at`, `updated_at`
 
 **`deployments`** — 배포 1회 기록
+
 - `id` (uuid, PK)
 - `git_ref` — 브랜치/태그/SHA
 - `status` — `pending | cloning | bundling | uploading | mapping | success | failed`
@@ -157,6 +159,7 @@ services:
 - `started_at`, `finished_at`
 
 **`test_files`** — 배포된 번들의 개별 파일
+
 - `id` (uuid, PK)
 - `deployment_id` (FK → deployments)
 - `source_path` — 원본 repo 내 상대 경로
@@ -164,6 +167,7 @@ services:
 - `created_at`
 
 **`test_case_mappings`** — TC ↔ 파일 매핑 (배포 시점 스냅샷)
+
 - `id` (uuid, PK)
 - `deployment_id` (FK)
 - `test_case_id` (FK → test_cases)
@@ -171,6 +175,7 @@ services:
 - UNIQUE (`deployment_id`, `test_case_id`)
 
 **`test_runs`** — 실행 1회
+
 - `id` (uuid, PK)
 - `deployment_id` (FK)
 - `requested_test_case_ids` (JSON (string[]))
@@ -179,6 +184,7 @@ services:
 - `playwright_report_key` (nullable)
 
 **`test_run_items`** — TC 단위 실행 결과
+
 - `id` (uuid, PK)
 - `test_run_id` (FK), `test_case_id` (FK), `test_file_id` (FK)
 - `status` — `pending | running | passed | failed | skipped | timedout`
@@ -187,6 +193,7 @@ services:
 - `started_at`, `finished_at`
 
 **`test_events`** — 스트리밍 리포터의 원시 이벤트
+
 - `id` (bigint auto_increment, PK)
 - `test_run_id` (FK), `test_run_item_id` (FK, nullable)
 - `event_type` — `test_begin | test_end | step_begin | step_end | stdout | stderr`
@@ -276,6 +283,7 @@ services:
 ### 5.1 Admin Server 공개 REST API (브라우저용)
 
 **테스트 케이스** (쓰기는 PATCH만)
+
 - `GET /api/test-cases?q=&tag=&active_only=&page=` — 목록 (응답에 `is_active` 계산 필드 포함)
 - `GET /api/test-cases/:id` — 상세
 - `PATCH /api/test-cases/:id` — 내용 수정
@@ -283,12 +291,14 @@ services:
 - `GET /api/runnable-test-cases` — 최신 성공 배포 기준 실행 가능한 TC 목록
 
 **배포**
+
 - `GET /api/deployments?status=&page=` — 목록
 - `POST /api/deployments` — 트리거. body: `{ git_ref }`
 - `GET /api/deployments/:id` — 상세 + 진행 상태
 - `GET /api/deployments/:id/test-files` — 번들에 포함된 파일
 
 **실행**
+
 - `POST /api/runs` — 실행 요청. body: `{ test_case_ids, param_overrides? }`
 - `GET /api/runs?page=` — 목록
 - `GET /api/runs/:id` — 상세 (items 포함)
@@ -300,10 +310,12 @@ services:
 **호출자**: `deploy-server`, `test-runner` 컨테이너. 브라우저/외부에서 호출되지 않음.
 
 **보호 장치 (이중 방어)**
+
 1. **네트워크 레벨**: Next.js middleware에서 `/internal/*` 경로에 대해 요청의 `Host` 헤더를 검사. Docker 내부 DNS(`admin:3000`)일 때만 통과, 그 외(`localhost:3000`, public IP 등)는 404 반환. 브라우저로 실수 호출 및 host 노출된 포트로의 접근 차단.
 2. **애플리케이션 레벨**: 모든 `/internal/*` 요청은 `X-Internal-Token` 헤더를 요구. 값이 `.env`의 `INTERNAL_API_TOKEN`과 일치하지 않으면 401. admin·deploy·runner가 같은 토큰을 공유.
 
 **엔드포인트**
+
 - `POST /internal/deployments/:id/status` — 진행 상태 업데이트
 - `POST /internal/deployments/:id/mappings` — 파일 + TC upsert + 매핑 일괄 저장 (단일 트랜잭션)
 - `GET /internal/runs/:id/test-case/:tc_id/resolve` — 실행 시점 params/expected 조회 (snapshot 반환)
@@ -390,15 +402,15 @@ bucket: test-platform
 
 ### 6.3 실패 처리
 
-| 실패 지점 | 처리 |
-|---|---|
-| Git clone 실패 | deployment.status=failed, error_message 기록 |
-| 번들링 실패 | 동일 |
-| MinIO 업로드 실패 | 동일 (orphan 객체는 데모 범위 밖) |
-| Runner 번들 다운로드 실패 | item 상태 failed + admin 보고, 메시지 nack → DLQ |
-| Playwright 크래시 | 리포터가 잡아 failed 이벤트 전송, 메시지 정상 ack |
-| Runner 프로세스 크래시 | ack 안 했으므로 RabbitMQ 재전달, 다른 러너가 재시도 |
-| Admin 일시 장애 | 러너 리포터가 내부 버퍼에 유지하며 재시도, 타임아웃 초과 시 nack |
+| 실패 지점                 | 처리                                                             |
+| ------------------------- | ---------------------------------------------------------------- |
+| Git clone 실패            | deployment.status=failed, error_message 기록                     |
+| 번들링 실패               | 동일                                                             |
+| MinIO 업로드 실패         | 동일 (orphan 객체는 데모 범위 밖)                                |
+| Runner 번들 다운로드 실패 | item 상태 failed + admin 보고, 메시지 nack → DLQ                 |
+| Playwright 크래시         | 리포터가 잡아 failed 이벤트 전송, 메시지 정상 ack                |
+| Runner 프로세스 크래시    | ack 안 했으므로 RabbitMQ 재전달, 다른 러너가 재시도              |
+| Admin 일시 장애           | 러너 리포터가 내부 버퍼에 유지하며 재시도, 타임아웃 초과 시 nack |
 
 ## 7. 컴포넌트 내부 구조
 
@@ -470,17 +482,20 @@ admin-server/
 ```
 
 **레이어 원칙**
+
 - `app/api/*`: HTTP 파싱과 응답 직렬화만
 - `services/`: 비즈니스 로직, 트랜잭션 경계
 - `repositories/`: DB 쿼리 캡슐화
 - services는 HTTP/Next.js에 의존하지 않음 → 단위 테스트 용이
 
 **주요 서비스**
+
 - `deployment-service`: 생성·상태 전이, 매핑 저장 트랜잭션(파일 + TC upsert + mappings)
 - `run-service`: run 생성 시 params_snapshot 박제, 큐 발행, items 완료 감지 후 run 상태 롤업
 - `event-ingest-service`: 리포터 이벤트 배치 insert + item 상태 전이
 
 **UI**
+
 - SSE로 run 실시간 업데이트 (`/api/runs/:id/events/stream`)
 - Playwright HTML 리포트는 iframe + MinIO presigned URL
 
@@ -510,12 +525,14 @@ deploy-server/src/
 ```
 
 **책임**
+
 - `DeployController`: 202 즉시 반환, `DeployService.run()`을 비동기로 시작
 - `DeployService`: 파이프라인 단계 조율, 각 단계 결과를 `AdminClientService`로 콜백
 - 파이프라인 서비스는 각각 순수한 입출력 (`clone(ref)→path`, `bundle(path)→files`, `parse(source)→refs`, `upload(file)→key`)
 - workspace는 컨테이너 재시작 시 초기화, 매 배포마다 fresh clone (단순성 우선)
 
 **번들링 제약**
+
 - 각 `*.spec.ts`는 독립 entry. 외부 의존성은 인라인.
 - 정규식은 **원본 소스**에 실행 (minify 전)
 - 동적 TC ID, 조건부 `testCase()` 호출은 지원하지 않음 — README에 명시
@@ -533,14 +550,16 @@ test-runner/src/
 ```
 
 **executor 흐름**
+
 1. 메시지 수신 → `bundle-fetcher`로 JS 다운로드
-2. env 주입 (PLATFORM_*, SUT_BASE_URL 등)
+2. env 주입 (PLATFORM\_\*, SUT_BASE_URL 등)
 3. `playwright-runner`가 Playwright CLI 실행 (config의 reporter에 StreamingReporter 등록)
 4. 종료 후 `artifact-uploader`가 리포트/artifact 업로드
 5. admin에 item 상태 POST
 6. 메시지 ack (인프라 실패 시에만 nack → DLQ)
 
 **동시성**
+
 - `consumer.ts`가 `prefetch_count = MAX_CONCURRENT`
 - 각 메시지는 별도 Promise로 병렬 처리
 - ack/nack은 개별 완료 시점
@@ -554,16 +573,16 @@ test-runner/src/
 services:
   admin:
     build: { context: ., dockerfile: packages/admin-server/Dockerfile }
-    ports: ["3000:3000"]
+    ports: ['3000:3000']
   deploy:
     build: { context: ., dockerfile: packages/deploy-server/Dockerfile }
-    ports: ["4000:4000"]
+    ports: ['4000:4000']
   runner:
     build: { context: ., dockerfile: packages/test-runner/Dockerfile }
     # 수평 확장은 `docker compose up --scale runner=N`
-  mysql:     { image: mysql:8.0, ports: ["3306:3306"], volumes: [mysql-data:/var/lib/mysql] }
-  rabbitmq:  { image: rabbitmq:3-management, ports: ["15672:15672"] }
-  minio:     { image: minio/minio, ports: ["9000:9000","9001:9001"] }
+  mysql: { image: mysql:8.0, ports: ['3306:3306'], volumes: [mysql-data:/var/lib/mysql] }
+  rabbitmq: { image: rabbitmq:3-management, ports: ['15672:15672'] }
+  minio: { image: minio/minio, ports: ['9000:9000', '9001:9001'] }
 volumes:
   mysql-data: {}
   rabbitmq-data: {}
@@ -571,6 +590,7 @@ volumes:
 ```
 
 **러너 이미지**
+
 - 베이스: `mcr.microsoft.com/playwright:v1.xx.x-noble` (브라우저 포함)
 - pnpm + workspace + built `playwright-lib`, `shared` 포함
 - 테스트 번들은 이미지에 굽지 않음 (실행 시 MinIO에서 다운로드)
@@ -665,15 +685,18 @@ user-test-repo/
 `playwright.config.ts` 예:
 
 ```ts
-import { defineConfig } from "@playwright/test";
+import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   reporter: [
-    ["list"],
-    ["@platform/playwright-lib/reporter", {
-      chunkSize: Number(process.env.PLATFORM_REPORTER_CHUNK_SIZE ?? 50),
-      flushIntervalMs: Number(process.env.PLATFORM_REPORTER_FLUSH_INTERVAL_MS ?? 2000),
-    }],
+    ['list'],
+    [
+      '@platform/playwright-lib/reporter',
+      {
+        chunkSize: Number(process.env.PLATFORM_REPORTER_CHUNK_SIZE ?? 50),
+        flushIntervalMs: Number(process.env.PLATFORM_REPORTER_FLUSH_INTERVAL_MS ?? 2000),
+      },
+    ],
   ],
   use: { baseURL: process.env.SUT_BASE_URL },
 });
@@ -682,34 +705,34 @@ export default defineConfig({
 `tests/cart.spec.ts` 예:
 
 ```ts
-import { testCase } from "@platform/playwright-lib";
+import { testCase } from '@platform/playwright-lib';
 
-testCase("TC-001", async ({ page, params, expected }) => {
-  await page.goto("/cart");
-  await page.getByRole("button", { name: "Add" }).click();
-  await expect(page.locator(".count")).toHaveText(String(expected.count));
+testCase('TC-001', async ({ page, params, expected }) => {
+  await page.goto('/cart');
+  await page.getByRole('button', { name: 'Add' }).click();
+  await expect(page.locator('.count')).toHaveText(String(expected.count));
 });
 ```
 
 ## 11. 주요 결정 요약
 
-| 결정 | 선택 | 대안 |
-|---|---|---|
-| 프로젝트 구성 | 모노레포 + pnpm workspaces | 멀티레포, 단일 package |
-| 어드민 프레임워크 | Next.js (UI+API 통합) | REST-only + 별도 SPA |
-| 배포 서버 프레임워크 | NestJS | Express, Fastify |
-| 테스트 러너 | Plain Node + amqplib | NestJS |
-| 메시지 큐 | RabbitMQ | Redis/BullMQ, pg-boss |
-| DB | MySQL 8.0 | PostgreSQL, SQLite, MongoDB |
-| DB 클라이언트 | MikroORM | Prisma, Kysely, TypeORM |
-| 스토리지 | MinIO (S3 호환) | Docker named volume, HTTP 릴레이 |
-| Git 소스 | 원격 repo clone/pull | 로컬 repo, 파일 업로드 |
-| TC 매핑 방식 | 정규식 정적 파싱 | AST, 런타임 등록 |
-| TC 생성 | 배포 파이프라인 자동 upsert | 사람이 POST로 등록 |
-| TC 삭제 | 명시적 삭제 없음 (코드에서 제거 → is_active=false 계산) | soft delete 컬럼 |
-| 인증 | 없음 | 로그인, 사용자 관리 |
-| 동시성 제어 | prefetch + MAX_CONCURRENT + --scale | 단일 러너, 단일 실행 |
-| 커스텀 리포터 / `testCase()` | 둘 다 구현 | 리포터만, 둘 다 생략 |
+| 결정                         | 선택                                                    | 대안                             |
+| ---------------------------- | ------------------------------------------------------- | -------------------------------- |
+| 프로젝트 구성                | 모노레포 + pnpm workspaces                              | 멀티레포, 단일 package           |
+| 어드민 프레임워크            | Next.js (UI+API 통합)                                   | REST-only + 별도 SPA             |
+| 배포 서버 프레임워크         | NestJS                                                  | Express, Fastify                 |
+| 테스트 러너                  | Plain Node + amqplib                                    | NestJS                           |
+| 메시지 큐                    | RabbitMQ                                                | Redis/BullMQ, pg-boss            |
+| DB                           | MySQL 8.0                                               | PostgreSQL, SQLite, MongoDB      |
+| DB 클라이언트                | MikroORM                                                | Prisma, Kysely, TypeORM          |
+| 스토리지                     | MinIO (S3 호환)                                         | Docker named volume, HTTP 릴레이 |
+| Git 소스                     | 원격 repo clone/pull                                    | 로컬 repo, 파일 업로드           |
+| TC 매핑 방식                 | 정규식 정적 파싱                                        | AST, 런타임 등록                 |
+| TC 생성                      | 배포 파이프라인 자동 upsert                             | 사람이 POST로 등록               |
+| TC 삭제                      | 명시적 삭제 없음 (코드에서 제거 → is_active=false 계산) | soft delete 컬럼                 |
+| 인증                         | 없음                                                    | 로그인, 사용자 관리              |
+| 동시성 제어                  | prefetch + MAX_CONCURRENT + --scale                     | 단일 러너, 단일 실행             |
+| 커스텀 리포터 / `testCase()` | 둘 다 구현                                              | 리포터만, 둘 다 생략             |
 
 ## 12. 산출물
 
