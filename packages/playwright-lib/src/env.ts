@@ -1,3 +1,5 @@
+import { z } from 'zod/v4';
+
 export interface PlatformEnv {
   runId: string;
   itemId: string;
@@ -7,37 +9,33 @@ export interface PlatformEnv {
   reporterFlushIntervalMs: number;
 }
 
-const DEFAULT_CHUNK_SIZE = 50;
-const DEFAULT_FLUSH_INTERVAL_MS = 2000;
+const requiredString = z.string().min(1);
+const numberWithDefault = (fallback: number) =>
+  z.preprocess((v) => (v === undefined || v === '' ? fallback : Number(v)), z.number());
 
-function required(source: NodeJS.ProcessEnv, key: string): string {
-  const value = source[key];
-  if (!value) throw new Error(`Missing required env: ${key}`);
-  return value;
-}
-
-function parseInt(value: string | undefined, fallback: number, key: string): number {
-  if (value === undefined || value === '') return fallback;
-  const n = Number(value);
-  if (!Number.isFinite(n)) throw new Error(`Invalid numeric env ${key}: ${value}`);
-  return n;
-}
+const schema = z.object({
+  PLATFORM_RUN_ID: requiredString,
+  PLATFORM_ITEM_ID: requiredString,
+  PLATFORM_ADMIN_URL: requiredString,
+  PLATFORM_INTERNAL_API_TOKEN: requiredString,
+  PLATFORM_REPORTER_CHUNK_SIZE: numberWithDefault(50),
+  PLATFORM_REPORTER_FLUSH_INTERVAL_MS: numberWithDefault(2000),
+});
 
 export function loadPlatformEnv(source: NodeJS.ProcessEnv = process.env): PlatformEnv {
+  const result = schema.safeParse(source);
+  if (!result.success) {
+    const [issue] = result.error.issues;
+    if (!issue) throw new Error('Invalid env');
+    throw new Error(`Invalid env ${issue.path.join('.')}: ${issue.message}`);
+  }
+  const parsed = result.data;
   return {
-    runId: required(source, 'PLATFORM_RUN_ID'),
-    itemId: required(source, 'PLATFORM_ITEM_ID'),
-    adminUrl: required(source, 'PLATFORM_ADMIN_URL'),
-    internalApiToken: required(source, 'PLATFORM_INTERNAL_API_TOKEN'),
-    reporterChunkSize: parseInt(
-      source.PLATFORM_REPORTER_CHUNK_SIZE,
-      DEFAULT_CHUNK_SIZE,
-      'PLATFORM_REPORTER_CHUNK_SIZE',
-    ),
-    reporterFlushIntervalMs: parseInt(
-      source.PLATFORM_REPORTER_FLUSH_INTERVAL_MS,
-      DEFAULT_FLUSH_INTERVAL_MS,
-      'PLATFORM_REPORTER_FLUSH_INTERVAL_MS',
-    ),
+    runId: parsed.PLATFORM_RUN_ID,
+    itemId: parsed.PLATFORM_ITEM_ID,
+    adminUrl: parsed.PLATFORM_ADMIN_URL,
+    internalApiToken: parsed.PLATFORM_INTERNAL_API_TOKEN,
+    reporterChunkSize: parsed.PLATFORM_REPORTER_CHUNK_SIZE,
+    reporterFlushIntervalMs: parsed.PLATFORM_REPORTER_FLUSH_INTERVAL_MS,
   };
 }
