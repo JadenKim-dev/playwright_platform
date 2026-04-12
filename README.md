@@ -1,6 +1,6 @@
-# Playwright Test Platform Demo
+# Playwright Test Platform
 
-A self-built demo of a Playwright-based test automation platform. See `docs/superpowers/specs/2026-04-12-playwright-test-platform-demo-design.md` for the design document.
+A self-built demo of a Playwright-based test automation platform.
 
 ## Requirements
 
