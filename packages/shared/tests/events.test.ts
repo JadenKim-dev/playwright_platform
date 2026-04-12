@@ -81,3 +81,27 @@ describe('reporter-events types', () => {
     expect(batch.events.length).toBe(1);
   });
 });
+
+import type {
+  RunItemExecuteMessage,
+  QueueMessageRoutingKey,
+} from '../src/events/queue-messages.js';
+
+describe('queue-messages', () => {
+  it('RunItemExecuteMessage carries identifiers and bundle key', () => {
+    const msg: RunItemExecuteMessage = {
+      runId: 'run-1',
+      itemId: 'item-1',
+      deploymentId: 'dep-1',
+      testCaseId: 'TC-001',
+      testFileBundleKey: 'deployments/dep-1/files/cart.spec.js',
+      adminBaseUrl: 'http://admin:3000',
+    };
+    expect(msg.testCaseId).toBe('TC-001');
+  });
+
+  it('routing key constant exists', () => {
+    const key: QueueMessageRoutingKey = 'run.item.execute';
+    expect(key).toBe('run.item.execute');
+  });
+});
