@@ -4,6 +4,7 @@ import {
   RunStatus,
   RunItemStatus,
 } from '../src/constants/statuses.js';
+import { ReporterEventType } from '../src/constants/event-types.js';
 
 describe('statuses', () => {
   it('DeploymentStatus covers full pipeline lifecycle', () => {
@@ -33,6 +34,20 @@ describe('statuses', () => {
       'failed',
       'skipped',
       'timedout',
+    ]);
+  });
+});
+
+describe('ReporterEventType', () => {
+  it('covers test_begin/test_end/step_begin/step_end/stdout/stderr', () => {
+    const values = Object.values(ReporterEventType);
+    expect(values).toEqual([
+      'test_begin',
+      'test_end',
+      'step_begin',
+      'step_end',
+      'stdout',
+      'stderr',
     ]);
   });
 });
