@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  DeploymentStatus,
-  RunStatus,
-  RunItemStatus,
-} from '../src/constants/statuses.js';
+import { DeploymentStatus, RunStatus, RunItemStatus } from '../src/constants/statuses.js';
 import { ReporterEventType } from '../src/constants/event-types.js';
 
 describe('statuses', () => {
@@ -27,14 +23,7 @@ describe('statuses', () => {
 
   it('RunItemStatus has pending/running/passed/failed/skipped/timedout', () => {
     const values = Object.values(RunItemStatus);
-    expect(values).toEqual([
-      'pending',
-      'running',
-      'passed',
-      'failed',
-      'skipped',
-      'timedout',
-    ]);
+    expect(values).toEqual(['pending', 'running', 'passed', 'failed', 'skipped', 'timedout']);
   });
 });
 

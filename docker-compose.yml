@@ -12,11 +12,12 @@ services:
       --collation-server=utf8mb4_unicode_ci
       --default-time-zone=+00:00
     ports:
-      - "3306:3306"
+      - '3306:3306'
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test:
+        ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-u', 'root', '-p${MYSQL_ROOT_PASSWORD}']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -24,12 +25,12 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - '5672:5672'
+      - '15672:15672'
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -41,12 +42,12 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     volumes:
       - minio-data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 5s
       timeout: 3s
       retries: 10
