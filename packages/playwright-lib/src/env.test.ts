@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { loadPlatformEnv } from '../src/env.js';
+import { loadPlatformEnv } from './env.js';
 
 const baseEnv = {
   PLATFORM_RUN_ID: 'run-1',

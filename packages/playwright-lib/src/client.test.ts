@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ReporterEventBatch, RunCompleteDto, RunItemStatusUpdateDto } from '@platform/shared';
 import { RunItemStatus } from '@platform/shared';
-import { AdminClient } from '../src/client.js';
+import { AdminClient } from './client.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {

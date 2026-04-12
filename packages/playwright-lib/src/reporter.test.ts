@@ -5,9 +5,9 @@ import {
   type ReporterEventBatch,
   type RunItemStatusUpdateDto,
 } from '@platform/shared';
-import { StreamingReporter } from '../src/reporter.js';
-import type { AdminClient } from '../src/client.js';
-import type { PlatformEnv } from '../src/env.js';
+import { StreamingReporter } from './reporter.js';
+import type { AdminClient } from './client.js';
+import type { PlatformEnv } from './env.js';
 
 interface FakeClient {
   postEvents: ReturnType<typeof vi.fn>;
