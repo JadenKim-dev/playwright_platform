@@ -26,7 +26,7 @@ describe('loadPlatformEnv', () => {
   });
 
   it('throws with env name in message when a required env is missing', () => {
-    const missing = { ...baseEnv };
+    const missing: Partial<typeof baseEnv> = { ...baseEnv };
     delete missing.PLATFORM_RUN_ID;
     expect(() => loadPlatformEnv(missing)).toThrow(/PLATFORM_RUN_ID/);
   });
