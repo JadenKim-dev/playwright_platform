@@ -486,22 +486,31 @@ git commit -m "feat(playwright-lib): testCase() wrapper resolves params/expected
 
 ---
 
-### Task 5: `reporter.ts` — `StreamingReporter` (TDD)
+### Task 5: `reporter.ts` — `StreamingReporter` + `AdminClient.updateItemStatus` (TDD)
 
 **Files:**
 
+- Modify: `packages/playwright-lib/src/client.ts` — `updateItemStatus` 메서드 추가
+- Modify: `packages/playwright-lib/tests/client.test.ts` — `updateItemStatus` 테스트 추가
 - Create: `packages/playwright-lib/tests/reporter.test.ts`
 - Create: `packages/playwright-lib/src/reporter.ts`
 - Create: `packages/playwright-lib/src/reporter-entry.ts`
 
 **Purpose:** Playwright `Reporter` 인터페이스 구현. 메모리에 전체 결과를 쌓지 않고, 일정 조건에서 admin으로 flush.
 
+**설계 정정 (원 Task 3 코드 보완):**
+
+- `AdminClient.complete()`는 run 레벨 완료 신호용이라 reporter(item 단위 실행)가 호출할 곳이 아니다. reporter는 **item 상태**를 업데이트해야 한다. 그래서 이 태스크에서 `AdminClient.updateItemStatus(body: RunItemStatusUpdateDto)` 메서드를 추가한다.
+- URL: `POST /internal/runs/:runId/items/:itemId/status` (itemId는 env에 있으므로 생성자에서 받아둠).
+- Body 타입: `RunItemStatusUpdateDto { status, durationMs?, errorMessage? }` — 이미 `@platform/shared`에 정의됨.
+- `AdminClient` 생성자 옵션에 `itemId: string` 추가. `complete()`는 그대로 유지 (러너 오케스트레이터가 쓸 예정).
+
 **버퍼/플러시 규칙:**
 
 - 내부 버퍼에 `ReporterEvent[]` 누적.
 - 버퍼 길이가 `chunkSize` 이상이면 즉시 flush(비동기이지만 `await` 하지 않고 background, 그러나 보류 중 flush는 한 번에 하나로 직렬화 — 동시 다발 POST 방지).
 - `flushIntervalMs`마다 주기적 flush(setInterval).
-- `onEnd()`에서 최종 flush 후 `client.complete()` 호출 + interval 정리.
+- `onEnd()`에서 최종 flush 후 `client.updateItemStatus({ status, durationMs, errorMessage })` 호출 + interval 정리.
 - flush 중 실패가 재시도 소진으로 끝나면 기본 동작: 에러 로그 후 `process.exit(1)`. 테스트에서 갈아끼울 수 있도록 `onFatal` 콜백 옵션.
 
 **이벤트 매핑(Playwright → `ReporterEvent`):**
@@ -517,6 +526,68 @@ git commit -m "feat(playwright-lib): testCase() wrapper resolves params/expected
 
 **생성자 옵션**: Playwright가 `new Reporter(options)`로 호출 → options에 `chunkSize`, `flushIntervalMs`가 있으면 우선, 없으면 env의 값 사용.
 
+- [ ] **Step 0: RED — `AdminClient.updateItemStatus` 테스트 추가 (`tests/client.test.ts`)**
+
+`AdminClient` 생성자 옵션에 `itemId`를 추가하고, 다음 2개 테스트 추가:
+
+1. `updateItemStatus({ status: 'passed', durationMs: 42 })` → `POST {adminUrl}/internal/runs/{runId}/items/{itemId}/status`로 body를 JSON으로 전송, `X-Internal-Token` 헤더 포함.
+2. 옵션의 `itemId`가 URL에 URL-encode되어 들어감 (예: `item with space`가 안전하게 인코딩).
+
+기존 생성자 호출부도 `itemId` 인자를 받도록 업데이트. `itemId`가 필요 없는 메서드(`resolve`/`postEvents`/`complete`) 테스트는 그대로 통과해야 함.
+
+- [ ] **Step 0-verify: RED 실행**
+
+```bash
+pnpm --filter @platform/playwright-lib test
+```
+Expected: 2개 새 테스트 실패 (`updateItemStatus is not a function` 등).
+
+- [ ] **Step 0-GREEN: `src/client.ts`에 `updateItemStatus` 구현**
+
+```ts
+// 생성자 옵션 확장
+export interface AdminClientOptions {
+  adminUrl: string;
+  runId: string;
+  itemId: string;           // ← 추가
+  internalApiToken: string;
+  timeoutMs?: number;
+  maxRetries?: number;
+  baseBackoffMs?: number;
+  fetchFn?: typeof fetch;
+}
+
+// 필드 추가
+private readonly itemId: string;
+// constructor에서:
+this.itemId = opts.itemId;
+
+// 새 메서드
+async updateItemStatus(body: RunItemStatusUpdateDto): Promise<void> {
+  const url = `${this.adminUrl}/internal/runs/${encodeURIComponent(this.runId)}/items/${encodeURIComponent(this.itemId)}/status`;
+  await this.requestJson<void>('POST', url, body);
+}
+```
+
+`RunItemStatusUpdateDto`를 `@platform/shared`에서 import. 기존 `test-case.ts`의 `createClient`도 `itemId: env.itemId`를 전달하도록 업데이트.
+
+- [ ] **Step 0-verify-green: 테스트 재실행**
+
+```bash
+pnpm --filter @platform/playwright-lib test
+pnpm --filter @platform/playwright-lib build
+```
+Expected: 전체 통과 (env 5 + client 10 + test-case 5 = 20).
+
+- [ ] **Step 0-commit**
+
+```bash
+git add packages/playwright-lib/src/client.ts packages/playwright-lib/src/test-case.ts packages/playwright-lib/tests/client.test.ts
+git commit -m "feat(playwright-lib): add AdminClient.updateItemStatus and itemId option"
+```
+
+---
+
 - [ ] **Step 1: RED — `tests/reporter.test.ts` 작성**
 
 테스트 시 실제 Playwright 타입 인스턴스를 만들기 까다로우므로 **최소한의 덕 타이핑**으로 가짜 `TestCase`/`TestResult`/`TestStep` 객체를 구성해 이벤트 메서드 호출.
@@ -526,9 +597,9 @@ git commit -m "feat(playwright-lib): testCase() wrapper resolves params/expected
 1. `onTestBegin` 호출 시 버퍼에 `TestBegin` 이벤트가 쌓인다.
 2. `chunkSize=2`로 설정한 뒤 2번 push → `AdminClient.postEvents`가 한 번 호출되고 events 길이 = 2.
 3. `flushIntervalMs=100`으로 타이머 흐르면 주기 flush가 호출됨(fake timer).
-4. `onEnd()` 호출 시 남은 버퍼 flush + `client.complete()`가 호출되고 interval이 정리됨.
+4. `onEnd()` 호출 시 남은 버퍼 flush + `client.updateItemStatus({ status, durationMs, errorMessage })`가 호출되고 interval이 정리됨. status/durationMs/errorMessage는 직전 `onTestEnd`에서 포착한 값.
 5. `onStepBegin`에서 카테고리가 `test.step`이 아닌 step은 이벤트로 쌓이지 않는다(hook, fixture 등 제외).
-6. `result.status='failed'` + `error.message` 있으면 `TestEndEvent.payload.errorMessage`에 포함.
+6. `result.status='failed'` + `error.message` 있으면 `TestEndEvent.payload.errorMessage`에 포함되고 `updateItemStatus` body에도 전달.
 7. flush 실패 재시도 소진 → 주입한 `onFatal` 콜백 호출 (기본값은 `process.exit`).
 8. 동시 push 중 flush 진행 중이면 직렬화되어 POST가 겹쳐 호출되지 않는다.
 
@@ -575,6 +646,8 @@ export class StreamingReporter implements Reporter {
   private flushing: Promise<void> | null = null;
   private intervalHandle: ReturnType<typeof setInterval> | null = null;
   private finalStatus: RunItemStatus = RunItemStatus.Passed;
+  private finalDurationMs: number | undefined;
+  private finalErrorMessage: string | undefined;
 
   constructor(options: StreamingReporterOptions = {}) {
     this.env = options.env ?? loadPlatformEnv();
@@ -583,6 +656,7 @@ export class StreamingReporter implements Reporter {
       new AdminClient({
         adminUrl: this.env.adminUrl,
         runId: this.env.runId,
+        itemId: this.env.itemId,
         internalApiToken: this.env.internalApiToken,
       });
     this.chunkSize = options.chunkSize ?? this.env.reporterChunkSize;
@@ -635,6 +709,8 @@ export class StreamingReporter implements Reporter {
   onTestEnd(_test: TestCase, result: TestResult): void {
     const status = mapStatus(result.status);
     this.finalStatus = status;
+    this.finalDurationMs = result.duration;
+    this.finalErrorMessage = result.error?.message;
     this.push({
       type: ReporterEventType.TestEnd,
       itemId: this.env.itemId,
@@ -672,7 +748,11 @@ export class StreamingReporter implements Reporter {
     }
     await this.flushSafe();
     try {
-      await this.client.complete({ itemId: this.env.itemId, status: this.finalStatus });
+      await this.client.updateItemStatus({
+        status: this.finalStatus,
+        durationMs: this.finalDurationMs,
+        errorMessage: this.finalErrorMessage,
+      });
     } catch (err) {
       this.onFatal(err);
     }
@@ -807,7 +887,8 @@ git commit -m "feat(playwright-lib): expose public API and document phase 2 veri
 
 - `GET /internal/runs/:runId/test-case/:tcId/resolve` → `ResolvedTestCaseDto` 반환, `X-Internal-Token` 필수.
 - `POST /internal/runs/:runId/events` → `ReporterEventBatch` 수신, 204 반환.
-- `POST /internal/runs/:runId/complete` → `RunCompleteDto` 수신, 204 반환.
+- `POST /internal/runs/:runId/items/:itemId/status` → `RunItemStatusUpdateDto` 수신, 204 반환. (reporter가 `onEnd`에서 호출)
+- `POST /internal/runs/:runId/complete` → `RunCompleteDto` 수신, 204 반환. (러너 오케스트레이터/admin 내부에서 호출)
 - 모든 `/internal/*` 경로는 Host 헤더 가드 + `X-Internal-Token` 검증 통과해야 200/204.
 
 Phase 3/4에서 이 계약과 다르게 구현하려면 본 플랜과 reporter/client를 함께 수정할 것.
