@@ -33,8 +33,24 @@ docker compose down -v         # Delete volumes as well
 ## Packages
 
 - `packages/shared` — Shared types, event schemas, DTOs, and constants (no runtime dependencies)
+- `packages/playwright-lib` — Custom `testCase()` wrapper + streaming Playwright reporter. External test repos import this to emit run events to the admin server.
 
-Packages to be added in later phases: `playwright-lib`, `admin-server`, `deploy-server`, `test-runner`.
+Packages to be added in later phases: `admin-server`, `deploy-server`, `test-runner`.
+
+### @platform/playwright-lib
+
+```bash
+pnpm --filter @platform/playwright-lib test
+pnpm --filter @platform/playwright-lib build
+```
+
+Exports:
+
+- `testCase(id, callback)` — Playwright `test()` wrapper; resolves `{ params, expected }` at run time from the admin server.
+- `StreamingReporter` — Playwright `Reporter`; buffered chunked POST of events, final item-status update on `onEnd`.
+- `AdminClient` — fetch wrapper with retry / timeout / `X-Internal-Token` auth.
+
+Runner-side env: `PLATFORM_RUN_ID`, `PLATFORM_ITEM_ID`, `PLATFORM_ADMIN_URL`, `PLATFORM_INTERNAL_API_TOKEN`, `PLATFORM_REPORTER_CHUNK_SIZE`, `PLATFORM_REPORTER_FLUSH_INTERVAL_MS`.
 
 ## Development Scripts
 
