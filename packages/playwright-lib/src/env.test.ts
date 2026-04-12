@@ -46,4 +46,37 @@ describe('loadPlatformEnv', () => {
       /PLATFORM_REPORTER_CHUNK_SIZE/,
     );
   });
+
+  it('defaults a numeric env when its value is an empty string', () => {
+    const result = loadPlatformEnv({ ...baseEnv, PLATFORM_REPORTER_CHUNK_SIZE: '' });
+    expect(result.reporterChunkSize).toBe(50);
+  });
+
+  it('throws when a required env is an empty string', () => {
+    expect(() => loadPlatformEnv({ ...baseEnv, PLATFORM_RUN_ID: '' })).toThrow(/PLATFORM_RUN_ID/);
+  });
+
+  it('throws when a numeric env is zero or negative', () => {
+    expect(() => loadPlatformEnv({ ...baseEnv, PLATFORM_REPORTER_CHUNK_SIZE: '0' })).toThrow(
+      /PLATFORM_REPORTER_CHUNK_SIZE/,
+    );
+    expect(() =>
+      loadPlatformEnv({ ...baseEnv, PLATFORM_REPORTER_FLUSH_INTERVAL_MS: '-10' }),
+    ).toThrow(/PLATFORM_REPORTER_FLUSH_INTERVAL_MS/);
+  });
+
+  it('throws when a numeric env is not an integer', () => {
+    expect(() => loadPlatformEnv({ ...baseEnv, PLATFORM_REPORTER_CHUNK_SIZE: '1.5' })).toThrow(
+      /PLATFORM_REPORTER_CHUNK_SIZE/,
+    );
+  });
+
+  it('reports all invalid envs in a single error', () => {
+    expect(() =>
+      loadPlatformEnv({
+        PLATFORM_RUN_ID: 'run-1',
+        PLATFORM_ITEM_ID: 'item-1',
+      }),
+    ).toThrow(/PLATFORM_ADMIN_URL[\s\S]*PLATFORM_INTERNAL_API_TOKEN/);
+  });
 });
