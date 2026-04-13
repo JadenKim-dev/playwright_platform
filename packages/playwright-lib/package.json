@@ -1,0 +1,35 @@
+{
+  "name": "@platform/playwright-lib",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./reporter": {
+      "types": "./dist/reporter/reporter-entry.d.ts",
+      "default": "./dist/reporter/reporter-entry.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@platform/shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "@playwright/test": "^1.47.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0"
+  }
+}

@@ -33,8 +33,9 @@ docker compose down -v         # Delete volumes as well
 ## Packages
 
 - `packages/shared` — Shared types, event schemas, DTOs, and constants (no runtime dependencies)
+- `packages/playwright-lib` — Custom `testCase()` wrapper + streaming Playwright reporter. External test repos import this to emit run events to the admin server.
 
-Packages to be added in later phases: `playwright-lib`, `admin-server`, `deploy-server`, `test-runner`.
+Packages to be added in later phases: `admin-server`, `deploy-server`, `test-runner`.
 
 ## Development Scripts
 
