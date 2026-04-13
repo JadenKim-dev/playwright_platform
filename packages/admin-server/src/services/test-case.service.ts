@@ -6,7 +6,7 @@ import type { DeploymentRepository } from '../repositories/deployment.repository
 import { ApiError } from '../app/api/_lib/error-handler.js';
 import { toTestCaseDto } from './mappers.js';
 
-export interface ListTestCasesQuery {
+export interface TestCaseListParams {
   q?: string;
   tag?: string;
   activeOnly?: boolean;
@@ -22,8 +22,13 @@ export class TestCaseService {
     private readonly deployments: DeploymentRepository,
   ) {}
 
-  async list(query: ListTestCasesQuery): Promise<{ items: TestCaseDto[]; total: number }> {
-    const { items, total } = await this.testCases.listWithFilter(query);
+  async list(query: TestCaseListParams): Promise<{ items: TestCaseDto[]; total: number }> {
+    const { items, total } = await this.testCases.listWithFilter({
+      q: query.q,
+      tag: query.tag,
+      page: query.page,
+      pageSize: query.pageSize,
+    });
     const activeIds = await this.computeActiveIds();
     const mapped = items.map((e) => toTestCaseDto(e, activeIds.has(e.id)));
     if (query.activeOnly) {
