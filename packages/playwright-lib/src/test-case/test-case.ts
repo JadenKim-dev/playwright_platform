@@ -6,8 +6,8 @@ import {
   type PlaywrightWorkerOptions,
 } from '@playwright/test';
 import type { ResolvedTestCaseDto } from '@platform/shared';
-import { AdminClient } from './client.js';
-import { loadPlatformEnv, type PlatformEnv } from './env.js';
+import { AdminClient } from '../admin/admin-client.js';
+import { loadPlatformEnv, type PlatformEnv } from '../env/platform-env.js';
 
 export type PlaywrightFixtures = PlaywrightTestArgs &
   PlaywrightTestOptions &

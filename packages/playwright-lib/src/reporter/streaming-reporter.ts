@@ -10,8 +10,8 @@ import {
   type ReporterEvent,
   type ReporterEventBatch,
 } from '@platform/shared';
-import { AdminClient } from './client.js';
-import { loadPlatformEnv, type PlatformEnv } from './env.js';
+import { AdminClient } from '../admin/admin-client.js';
+import { loadPlatformEnv, type PlatformEnv } from '../env/platform-env.js';
 import { EventBatcher } from './event-batcher.js';
 import { ReporterEventFactory } from './reporter-event-factory.js';
 

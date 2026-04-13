@@ -11,8 +11,8 @@
       "default": "./dist/index.js"
     },
     "./reporter": {
-      "types": "./dist/reporter-entry.d.ts",
-      "default": "./dist/reporter-entry.js"
+      "types": "./dist/reporter/reporter-entry.d.ts",
+      "default": "./dist/reporter/reporter-entry.js"
     }
   },
   "files": [

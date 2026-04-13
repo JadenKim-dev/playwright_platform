@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { ResolvedTestCaseDto } from '@platform/shared';
 import { createTestCase } from './test-case.js';
-import type { PlatformEnv } from './env.js';
-import type { AdminClient } from './client.js';
+import type { PlatformEnv } from '../env/platform-env.js';
+import type { AdminClient } from '../admin/admin-client.js';
 
 type CapturedTestFn = (fixtures: unknown, testInfo: unknown) => Promise<void>;
 
