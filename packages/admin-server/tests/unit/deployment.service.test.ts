@@ -69,6 +69,12 @@ describe('DeploymentService', () => {
     await expect(service.getById('x')).rejects.toMatchObject({ status: 404 });
   });
 
+  it('listTestFiles — throws 404 when the deployment is missing', async () => {
+    depRepo.findById.mockResolvedValue(null);
+    await expect(service.listTestFiles('x')).rejects.toMatchObject({ status: 404 });
+    expect(fileRepo.findByDeploymentId).not.toHaveBeenCalled();
+  });
+
   it('listTestFiles — delegates to the repository and maps to DTOs', async () => {
     depRepo.findById.mockResolvedValue(makeDep());
     fileRepo.findByDeploymentId.mockResolvedValue([

@@ -41,6 +41,7 @@ export class DeploymentService {
 
   async create(dto: DeploymentCreateDto): Promise<DeploymentDto> {
     // Persist the deployment row first so the trigger failure leaves an auditable record.
+    // `partial: true` opts into MikroORM v6's partial input since status/startedAt have runtime defaults.
     const dep = this.em.create(Deployment, { gitRef: dto.gitRef }, { partial: true });
     await this.em.persistAndFlush(dep);
     await this.trigger.trigger({ deploymentId: dep.id, gitRef: dep.gitRef });
