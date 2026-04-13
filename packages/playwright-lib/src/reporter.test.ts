@@ -44,14 +44,6 @@ function makeTestResult(
     error: partial.error,
   } as unknown;
 }
-function makeStep(
-  category: string,
-  title = 'step title',
-  duration = 10,
-  error?: { message: string },
-) {
-  return { category, title, duration, error } as unknown;
-}
 
 describe('StreamingReporter', () => {
   beforeEach(() => {
@@ -93,18 +85,16 @@ describe('StreamingReporter', () => {
       flushIntervalMs: 100000,
     });
     // @ts-expect-error duck typed
-    reporter.onStepBegin(makeTestCase(), makeTestResult(), makeStep('hook', 'beforeAll'));
+    reporter.onStepBegin(makeTestCase(), makeTestResult(), { category: 'hook', title: 'beforeAll' });
     // @ts-expect-error duck typed
-    reporter.onStepBegin(makeTestCase(), makeTestResult(), makeStep('fixture', 'page'));
+    reporter.onStepBegin(makeTestCase(), makeTestResult(), { category: 'fixture', title: 'page' });
     // @ts-expect-error duck typed
-    reporter.onStepBegin(makeTestCase(), makeTestResult(), makeStep('test.step', 'user step'));
+    reporter.onStepBegin(makeTestCase(), makeTestResult(), { category: 'test.step', title: 'user step' });
     // @ts-expect-error duck typed
     reporter.onTestEnd(makeTestCase(), makeTestResult({ status: 'passed', duration: 1 }));
     // @ts-expect-error duck typed
     await reporter.onEnd({ status: 'passed' });
-    // Only the test.step StepBegin and the TestEnd should have been buffered (hook/fixture ignored).
     const batch = client.postEvents.mock.calls[0][0] as ReporterEventBatch;
-    expect(batch.events).toHaveLength(2);
     expect(batch.events.map((e) => e.type)).toEqual([
       ReporterEventType.StepBegin,
       ReporterEventType.TestEnd,
@@ -139,5 +129,4 @@ describe('StreamingReporter', () => {
       errorMessage: 'boom',
     });
   });
-
 });

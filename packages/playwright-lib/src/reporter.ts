@@ -6,7 +6,6 @@ import type {
   FullResult,
 } from '@playwright/test/reporter';
 import {
-  ReporterEventType,
   RunItemStatus,
   type ReporterEvent,
   type ReporterEventBatch,
@@ -14,6 +13,7 @@ import {
 import { AdminClient } from './client.js';
 import { loadPlatformEnv, type PlatformEnv } from './env.js';
 import { EventBatcher } from './event-batcher.js';
+import { ReporterEventFactory } from './reporter-event-factory.js';
 
 export interface StreamingReporterOptions {
   chunkSize?: number;
@@ -35,8 +35,8 @@ export class StreamingReporter implements Reporter {
   private readonly env: PlatformEnv;
   private readonly client: AdminClient;
   private readonly onFatal: (err: unknown) => void;
-  private readonly now: () => Date;
   private readonly batcher: EventBatcher<ReporterEvent>;
+  private readonly eventFactory: ReporterEventFactory;
 
   private finalStatus: RunItemStatus = RunItemStatus.Passed;
   private finalDurationMs: number | undefined;
@@ -58,7 +58,8 @@ export class StreamingReporter implements Reporter {
         console.error('[StreamingReporter] fatal:', err);
         process.exit(1);
       });
-    this.now = options.now ?? (() => new Date());
+    const now = options.now ?? (() => new Date());
+    this.eventFactory = new ReporterEventFactory(this.env.itemId, now);
     this.batcher = new EventBatcher<ReporterEvent>(
       options.chunkSize ?? this.env.reporterChunkSize,
       options.flushIntervalMs ?? this.env.reporterFlushIntervalMs,
@@ -75,71 +76,32 @@ export class StreamingReporter implements Reporter {
   }
 
   onTestBegin(_test: TestCase, _result: TestResult): void {
-    this.batcher.push({
-      type: ReporterEventType.TestBegin,
-      itemId: this.env.itemId,
-      ts: this.now().toISOString(),
-      payload: {},
-    });
+    this.batcher.push(this.eventFactory.testBegin());
   }
 
   onStepBegin(_test: TestCase, _result: TestResult, step: TestStep): void {
     if (step.category !== 'test.step') return;
-    this.batcher.push({
-      type: ReporterEventType.StepBegin,
-      itemId: this.env.itemId,
-      ts: this.now().toISOString(),
-      payload: { title: step.title },
-    });
+    this.batcher.push(this.eventFactory.stepBegin(step));
   }
 
   onStepEnd(_test: TestCase, _result: TestResult, step: TestStep): void {
     if (step.category !== 'test.step') return;
-    this.batcher.push({
-      type: ReporterEventType.StepEnd,
-      itemId: this.env.itemId,
-      ts: this.now().toISOString(),
-      payload: {
-        title: step.title,
-        durationMs: step.duration,
-        errorMessage: step.error?.message,
-      },
-    });
+    this.batcher.push(this.eventFactory.stepEnd(step));
   }
 
   onTestEnd(_test: TestCase, result: TestResult): void {
-    const status = StreamingReporter.mapStatus(result.status);
-    this.finalStatus = status;
+    this.finalStatus = ReporterEventFactory.mapStatus(result.status);
     this.finalDurationMs = result.duration;
     this.finalErrorMessage = result.error?.message;
-    this.batcher.push({
-      type: ReporterEventType.TestEnd,
-      itemId: this.env.itemId,
-      ts: this.now().toISOString(),
-      payload: {
-        status,
-        durationMs: result.duration,
-        errorMessage: result.error?.message,
-      },
-    });
+    this.batcher.push(this.eventFactory.testEnd(result));
   }
 
   onStdOut(chunk: string | Buffer): void {
-    this.batcher.push({
-      type: ReporterEventType.Stdout,
-      itemId: this.env.itemId,
-      ts: this.now().toISOString(),
-      payload: { text: chunk.toString() },
-    });
+    this.batcher.push(this.eventFactory.stdout(chunk));
   }
 
   onStdErr(chunk: string | Buffer): void {
-    this.batcher.push({
-      type: ReporterEventType.Stderr,
-      itemId: this.env.itemId,
-      ts: this.now().toISOString(),
-      payload: { text: chunk.toString() },
-    });
+    this.batcher.push(this.eventFactory.stderr(chunk));
   }
 
   async onEnd(_result: FullResult): Promise<void> {
@@ -153,20 +115,6 @@ export class StreamingReporter implements Reporter {
       });
     } catch (err) {
       this.onFatal(err);
-    }
-  }
-
-  private static mapStatus(s: TestResult['status']): RunItemStatus {
-    switch (s) {
-      case 'passed':
-        return RunItemStatus.Passed;
-      case 'skipped':
-        return RunItemStatus.Skipped;
-      case 'failed':
-      case 'timedOut':
-      case 'interrupted':
-      default:
-        return RunItemStatus.Failed;
     }
   }
 }
