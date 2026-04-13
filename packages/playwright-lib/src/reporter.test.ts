@@ -111,10 +111,7 @@ describe('StreamingReporter', () => {
     });
     reporter.onBegin();
     // @ts-expect-error duck typed
-    reporter.onTestEnd(
-      makeTestCase(),
-      makeTestResult({ status: 'failed', duration: 55, error: { message: 'boom' } }),
-    );
+    reporter.onTestEnd(makeTestCase(), makeTestResult({ status: 'failed', duration: 55, error: { message: 'boom' } }));
     // @ts-expect-error duck typed
     await reporter.onEnd({ status: 'failed' });
     const batch = client.postEvents.mock.calls[0][0] as ReporterEventBatch;
