@@ -13,6 +13,7 @@ import {
 } from '@platform/shared';
 import { AdminClient } from './client.js';
 import { loadPlatformEnv, type PlatformEnv } from './env.js';
+import { EventBatcher } from './event-batcher.js';
 
 export interface StreamingReporterOptions {
   chunkSize?: number;
@@ -23,17 +24,20 @@ export interface StreamingReporterOptions {
   now?: () => Date;
 }
 
+/**
+ * Playwright reporter that buffers test events and streams them in batches to the platform Admin server.
+ *
+ * Collects test/step begin-end and stdout/stderr events, flushing on chunk size or
+ * a periodic interval. On run completion, updates the item status with the final
+ * outcome, duration, and error message.
+ */
 export class StreamingReporter implements Reporter {
   private readonly env: PlatformEnv;
   private readonly client: AdminClient;
-  private readonly chunkSize: number;
-  private readonly flushIntervalMs: number;
   private readonly onFatal: (err: unknown) => void;
   private readonly now: () => Date;
+  private readonly batcher: EventBatcher<ReporterEvent>;
 
-  private buffer: ReporterEvent[] = [];
-  private flushing: Promise<void> | null = null;
-  private intervalHandle: ReturnType<typeof setInterval> | null = null;
   private finalStatus: RunItemStatus = RunItemStatus.Passed;
   private finalDurationMs: number | undefined;
   private finalErrorMessage: string | undefined;
@@ -48,8 +52,6 @@ export class StreamingReporter implements Reporter {
         itemId: this.env.itemId,
         internalApiToken: this.env.internalApiToken,
       });
-    this.chunkSize = options.chunkSize ?? this.env.reporterChunkSize;
-    this.flushIntervalMs = options.flushIntervalMs ?? this.env.reporterFlushIntervalMs;
     this.onFatal =
       options.onFatal ??
       ((err) => {
@@ -57,14 +59,23 @@ export class StreamingReporter implements Reporter {
         process.exit(1);
       });
     this.now = options.now ?? (() => new Date());
+    this.batcher = new EventBatcher<ReporterEvent>(
+      options.chunkSize ?? this.env.reporterChunkSize,
+      options.flushIntervalMs ?? this.env.reporterFlushIntervalMs,
+      (events) => {
+        const batch: ReporterEventBatch = { events };
+        return this.client.postEvents(batch);
+      },
+      (err) => this.onFatal(err),
+    );
   }
 
   onBegin(): void {
-    this.intervalHandle = setInterval(() => void this.flushSafe(), this.flushIntervalMs);
+    this.batcher.start();
   }
 
   onTestBegin(_test: TestCase, _result: TestResult): void {
-    this.push({
+    this.batcher.push({
       type: ReporterEventType.TestBegin,
       itemId: this.env.itemId,
       ts: this.now().toISOString(),
@@ -74,7 +85,7 @@ export class StreamingReporter implements Reporter {
 
   onStepBegin(_test: TestCase, _result: TestResult, step: TestStep): void {
     if (step.category !== 'test.step') return;
-    this.push({
+    this.batcher.push({
       type: ReporterEventType.StepBegin,
       itemId: this.env.itemId,
       ts: this.now().toISOString(),
@@ -84,7 +95,7 @@ export class StreamingReporter implements Reporter {
 
   onStepEnd(_test: TestCase, _result: TestResult, step: TestStep): void {
     if (step.category !== 'test.step') return;
-    this.push({
+    this.batcher.push({
       type: ReporterEventType.StepEnd,
       itemId: this.env.itemId,
       ts: this.now().toISOString(),
@@ -97,11 +108,11 @@ export class StreamingReporter implements Reporter {
   }
 
   onTestEnd(_test: TestCase, result: TestResult): void {
-    const status = mapStatus(result.status);
+    const status = StreamingReporter.mapStatus(result.status);
     this.finalStatus = status;
     this.finalDurationMs = result.duration;
     this.finalErrorMessage = result.error?.message;
-    this.push({
+    this.batcher.push({
       type: ReporterEventType.TestEnd,
       itemId: this.env.itemId,
       ts: this.now().toISOString(),
@@ -114,7 +125,7 @@ export class StreamingReporter implements Reporter {
   }
 
   onStdOut(chunk: string | Buffer): void {
-    this.push({
+    this.batcher.push({
       type: ReporterEventType.Stdout,
       itemId: this.env.itemId,
       ts: this.now().toISOString(),
@@ -123,7 +134,7 @@ export class StreamingReporter implements Reporter {
   }
 
   onStdErr(chunk: string | Buffer): void {
-    this.push({
+    this.batcher.push({
       type: ReporterEventType.Stderr,
       itemId: this.env.itemId,
       ts: this.now().toISOString(),
@@ -132,11 +143,8 @@ export class StreamingReporter implements Reporter {
   }
 
   async onEnd(_result: FullResult): Promise<void> {
-    if (this.intervalHandle) {
-      clearInterval(this.intervalHandle);
-      this.intervalHandle = null;
-    }
-    await this.flushSafe();
+    this.batcher.stop();
+    await this.batcher.flush();
     try {
       await this.client.updateItemStatus({
         status: this.finalStatus,
@@ -148,36 +156,17 @@ export class StreamingReporter implements Reporter {
     }
   }
 
-  private push(ev: ReporterEvent): void {
-    this.buffer.push(ev);
-    if (this.buffer.length >= this.chunkSize) void this.flushSafe();
-  }
-
-  private async flushSafe(): Promise<void> {
-    if (this.flushing) return this.flushing;
-    if (this.buffer.length === 0) return;
-    const events = this.buffer.splice(0, this.buffer.length);
-    const batch: ReporterEventBatch = { events };
-    this.flushing = this.client
-      .postEvents(batch)
-      .catch((err) => this.onFatal(err))
-      .finally(() => {
-        this.flushing = null;
-      });
-    return this.flushing;
-  }
-}
-
-function mapStatus(s: TestResult['status']): RunItemStatus {
-  switch (s) {
-    case 'passed':
-      return RunItemStatus.Passed;
-    case 'skipped':
-      return RunItemStatus.Skipped;
-    case 'failed':
-    case 'timedOut':
-    case 'interrupted':
-    default:
-      return RunItemStatus.Failed;
+  private static mapStatus(s: TestResult['status']): RunItemStatus {
+    switch (s) {
+      case 'passed':
+        return RunItemStatus.Passed;
+      case 'skipped':
+        return RunItemStatus.Skipped;
+      case 'failed':
+      case 'timedOut':
+      case 'interrupted':
+      default:
+        return RunItemStatus.Failed;
+    }
   }
 }
