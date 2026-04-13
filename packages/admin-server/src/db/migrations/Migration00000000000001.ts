@@ -99,7 +99,7 @@ export class Migration00000000000001 extends Migration {
 
     this.addSql(`
       create table \`test_events\` (
-        \`id\` bigint unsigned not null auto_increment,
+        \`id\` bigint not null auto_increment,
         \`test_run_id\` varchar(36) not null,
         \`test_run_item_id\` varchar(36) null,
         \`event_type\` varchar(32) not null,
