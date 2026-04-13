@@ -33,6 +33,10 @@ export class EventIngestService {
   ): Promise<void> {
     const item = await this.runItems.findById(itemId);
     if (!item) throw new ApiError(404, `run item ${itemId} not found`, 'not_found');
+    // Defense-in-depth: a malformed route must not mutate a sibling run's item.
+    if (item.testRun.id !== runId) {
+      throw new ApiError(404, `run item ${itemId} not found`, 'not_found');
+    }
     item.status = update.status;
     if (update.durationMs !== undefined) item.durationMs = update.durationMs;
     if (update.errorMessage !== undefined) item.errorMessage = update.errorMessage;

@@ -51,6 +51,7 @@ describe('EventIngestService', () => {
       durationMs: null,
       errorMessage: null,
       finishedAt: null,
+      testRun: { id: 'r1' },
     };
     runItemRepo.findById.mockResolvedValue(item);
     await service.updateItemStatus('r1', 'i1', {
@@ -68,6 +69,22 @@ describe('EventIngestService', () => {
     await expect(
       service.updateItemStatus('r1', 'i1', { status: RunItemStatus.Passed }),
     ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('updateItemStatus — throws 404 when item belongs to a different run', async () => {
+    const item = {
+      id: 'i1',
+      status: RunItemStatus.Running,
+      durationMs: null,
+      errorMessage: null,
+      finishedAt: null,
+      testRun: { id: 'other-run' },
+    };
+    runItemRepo.findById.mockResolvedValue(item);
+    await expect(
+      service.updateItemStatus('r1', 'i1', { status: RunItemStatus.Passed }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(em.flush).not.toHaveBeenCalled();
   });
 
   it('completeRun — rolls up to success when all items passed', async () => {
