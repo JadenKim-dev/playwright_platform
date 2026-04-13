@@ -1,5 +1,5 @@
 import { MikroORM, type EntityClass } from '@mikro-orm/mysql';
-import config from '../../mikro-orm.config.js';
+import config from '../../mikro-orm.config';
 
 let ormPromise: Promise<MikroORM> | null = null;
 

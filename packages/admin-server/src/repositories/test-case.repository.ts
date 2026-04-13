@@ -1,5 +1,5 @@
 import type { EntityManager } from '@mikro-orm/mysql';
-import { TestCase } from '../entities/test-case.entity.js';
+import { TestCase } from '../entities/test-case.entity';
 
 export interface ListTestCasesQuery {
   q?: string;

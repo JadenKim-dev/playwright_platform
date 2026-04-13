@@ -1,5 +1,5 @@
 import type { EntityManager } from '@mikro-orm/mysql';
-import { TestCaseMapping } from '../entities/test-case-mapping.entity.js';
+import { TestCaseMapping } from '../entities/test-case-mapping.entity';
 
 export class TestCaseMappingRepository {
   constructor(private readonly em: EntityManager) {}

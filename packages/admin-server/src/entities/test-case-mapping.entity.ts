@@ -1,8 +1,8 @@
 import { Entity, PrimaryKey, ManyToOne, Unique, Index } from '@mikro-orm/core';
 import { v4 as uuidv4 } from 'uuid';
-import { Deployment } from './deployment.entity.js';
-import { TestCase } from './test-case.entity.js';
-import { TestFile } from './test-file.entity.js';
+import { Deployment } from './deployment.entity';
+import { TestCase } from './test-case.entity';
+import { TestFile } from './test-file.entity';
 
 @Entity({ tableName: 'test_case_mappings' })
 @Unique({ properties: ['deployment', 'testCase'] })

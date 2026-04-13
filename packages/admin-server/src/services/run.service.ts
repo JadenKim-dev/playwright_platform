@@ -7,17 +7,17 @@ import {
   type RunCreateDto,
   type RunItemExecuteMessage,
 } from '@platform/shared';
-import { TestRun } from '../entities/test-run.entity.js';
-import { TestRunItem } from '../entities/test-run-item.entity.js';
-import type { DeploymentRepository } from '../repositories/deployment.repository.js';
-import type { TestCaseRepository } from '../repositories/test-case.repository.js';
-import type { TestCaseMappingRepository } from '../repositories/test-case-mapping.repository.js';
-import type { TestRunRepository } from '../repositories/test-run.repository.js';
-import type { TestRunItemRepository } from '../repositories/test-run-item.repository.js';
-import type { RunQueuePublisher } from '../queue/run-queue-publisher.js';
-import type { ObjectStorageClient } from '../storage/object-storage-client.js';
-import { ApiError } from '../app/api/_lib/error-handler.js';
-import { toRunDto, toRunItemDto } from './mappers.js';
+import { TestRun } from '../entities/test-run.entity';
+import { TestRunItem } from '../entities/test-run-item.entity';
+import type { DeploymentRepository } from '../repositories/deployment.repository';
+import type { TestCaseRepository } from '../repositories/test-case.repository';
+import type { TestCaseMappingRepository } from '../repositories/test-case-mapping.repository';
+import type { TestRunRepository } from '../repositories/test-run.repository';
+import type { TestRunItemRepository } from '../repositories/test-run-item.repository';
+import type { RunQueuePublisher } from '../queue/run-queue-publisher';
+import type { ObjectStorageClient } from '../storage/object-storage-client';
+import { ApiError } from '../app/api/_lib/error-handler';
+import { toRunDto, toRunItemDto } from './mappers';
 
 // Presigned report URLs stay valid long enough for the UI to open the report
 // without being so long that a leaked URL is a durable hazard.

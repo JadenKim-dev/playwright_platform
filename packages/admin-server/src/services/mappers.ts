@@ -5,11 +5,11 @@ import type {
   RunDto,
   RunItemDto,
 } from '@platform/shared';
-import type { TestCase } from '../entities/test-case.entity.js';
-import type { Deployment } from '../entities/deployment.entity.js';
-import type { TestFile } from '../entities/test-file.entity.js';
-import type { TestRun } from '../entities/test-run.entity.js';
-import type { TestRunItem } from '../entities/test-run-item.entity.js';
+import type { TestCase } from '../entities/test-case.entity';
+import type { Deployment } from '../entities/deployment.entity';
+import type { TestFile } from '../entities/test-file.entity';
+import type { TestRun } from '../entities/test-run.entity';
+import type { TestRunItem } from '../entities/test-run-item.entity';
 
 export function toTestCaseDto(entity: TestCase, isActive: boolean): TestCaseDto {
   return {

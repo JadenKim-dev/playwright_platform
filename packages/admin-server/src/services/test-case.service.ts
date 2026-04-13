@@ -1,10 +1,10 @@
 import type { EntityManager } from '@mikro-orm/mysql';
 import type { TestCaseDto, TestCasePatchDto } from '@platform/shared';
-import type { TestCaseRepository } from '../repositories/test-case.repository.js';
-import type { TestCaseMappingRepository } from '../repositories/test-case-mapping.repository.js';
-import type { DeploymentRepository } from '../repositories/deployment.repository.js';
-import { ApiError } from '../app/api/_lib/error-handler.js';
-import { toTestCaseDto } from './mappers.js';
+import type { TestCaseRepository } from '../repositories/test-case.repository';
+import type { TestCaseMappingRepository } from '../repositories/test-case-mapping.repository';
+import type { DeploymentRepository } from '../repositories/deployment.repository';
+import { ApiError } from '../app/api/_lib/error-handler';
+import { toTestCaseDto } from './mappers';
 
 export interface TestCaseListParams {
   q?: string;

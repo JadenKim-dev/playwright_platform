@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getAdminContainer } from '../../../../../container.js';
-import { handleRoute } from '../../../_lib/error-handler.js';
+import { getAdminContainer } from '../../../../../container';
+import { handleRoute } from '../../../_lib/error-handler';
 
 export const dynamic = 'force-dynamic';
 

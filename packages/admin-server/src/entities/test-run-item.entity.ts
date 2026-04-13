@@ -1,9 +1,9 @@
 import { Entity, PrimaryKey, Property, ManyToOne, Enum, Index } from '@mikro-orm/core';
 import { v4 as uuidv4 } from 'uuid';
 import { RunItemStatus } from '@platform/shared';
-import { TestRun } from './test-run.entity.js';
-import { TestCase } from './test-case.entity.js';
-import { TestFile } from './test-file.entity.js';
+import { TestRun } from './test-run.entity';
+import { TestCase } from './test-case.entity';
+import { TestFile } from './test-file.entity';
 
 @Entity({ tableName: 'test_run_items' })
 @Index({ properties: ['testRun'] })

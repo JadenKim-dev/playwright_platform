@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAdminContainer } from '../../../container.js';
-import { handleRoute, ApiError } from '../_lib/error-handler.js';
-import { parsePositiveIntParam } from '../_lib/query-params.js';
+import { getAdminContainer } from '../../../container';
+import { handleRoute, ApiError } from '../_lib/error-handler';
+import { parsePositiveIntParam } from '../_lib/query-params';
 
 export const dynamic = 'force-dynamic';
 

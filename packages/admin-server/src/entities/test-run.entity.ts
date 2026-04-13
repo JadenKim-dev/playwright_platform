@@ -1,7 +1,7 @@
 import { Entity, PrimaryKey, Property, ManyToOne, Enum, Index } from '@mikro-orm/core';
 import { v4 as uuidv4 } from 'uuid';
 import { RunStatus } from '@platform/shared';
-import { Deployment } from './deployment.entity.js';
+import { Deployment } from './deployment.entity';
 
 @Entity({ tableName: 'test_runs' })
 export class TestRun {

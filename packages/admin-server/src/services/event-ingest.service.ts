@@ -6,10 +6,10 @@ import {
   type RunItemStatusUpdateDto,
   type RunCompleteDto,
 } from '@platform/shared';
-import type { TestRunRepository } from '../repositories/test-run.repository.js';
-import type { TestRunItemRepository } from '../repositories/test-run-item.repository.js';
-import type { TestEventRepository } from '../repositories/test-event.repository.js';
-import { ApiError } from '../app/api/_lib/error-handler.js';
+import type { TestRunRepository } from '../repositories/test-run.repository';
+import type { TestRunItemRepository } from '../repositories/test-run-item.repository';
+import type { TestEventRepository } from '../repositories/test-event.repository';
+import { ApiError } from '../app/api/_lib/error-handler';
 
 export class EventIngestService {
   constructor(

@@ -1,6 +1,6 @@
 import { Entity, PrimaryKey, Property, ManyToOne, Index } from '@mikro-orm/core';
 import { v4 as uuidv4 } from 'uuid';
-import { Deployment } from './deployment.entity.js';
+import { Deployment } from './deployment.entity';
 
 @Entity({ tableName: 'test_files' })
 @Index({ properties: ['deployment'] })

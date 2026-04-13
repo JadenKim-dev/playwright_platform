@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getAdminContainer } from '../../../container.js';
-import { handleRoute } from '../_lib/error-handler.js';
-import { parsePositiveIntParam } from '../_lib/query-params.js';
+import { getAdminContainer } from '../../../container';
+import { handleRoute } from '../_lib/error-handler';
+import { parsePositiveIntParam } from '../_lib/query-params';
 
 export const dynamic = 'force-dynamic';
 

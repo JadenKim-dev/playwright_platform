@@ -5,12 +5,12 @@ import type {
   DeploymentStatus,
   TestFileDto,
 } from '@platform/shared';
-import { Deployment } from '../entities/deployment.entity.js';
-import type { DeploymentRepository } from '../repositories/deployment.repository.js';
-import type { TestFileRepository } from '../repositories/test-file.repository.js';
-import type { DeployTrigger } from '../deploy/deploy-trigger.js';
-import { ApiError } from '../app/api/_lib/error-handler.js';
-import { toDeploymentDto, toTestFileDto } from './mappers.js';
+import { Deployment } from '../entities/deployment.entity';
+import type { DeploymentRepository } from '../repositories/deployment.repository';
+import type { TestFileRepository } from '../repositories/test-file.repository';
+import type { DeployTrigger } from '../deploy/deploy-trigger';
+import { ApiError } from '../app/api/_lib/error-handler';
+import { toDeploymentDto, toTestFileDto } from './mappers';
 
 export class DeploymentService {
   constructor(

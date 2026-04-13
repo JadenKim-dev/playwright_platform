@@ -1,5 +1,5 @@
 import type { EntityManager } from '@mikro-orm/mysql';
-import { TestFile } from '../entities/test-file.entity.js';
+import { TestFile } from '../entities/test-file.entity';
 
 export class TestFileRepository {
   constructor(private readonly em: EntityManager) {}

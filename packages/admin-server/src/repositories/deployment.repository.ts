@@ -1,6 +1,6 @@
 import type { EntityManager } from '@mikro-orm/mysql';
 import { DeploymentStatus } from '@platform/shared';
-import { Deployment } from '../entities/deployment.entity.js';
+import { Deployment } from '../entities/deployment.entity';
 
 export class DeploymentRepository {
   constructor(private readonly em: EntityManager) {}

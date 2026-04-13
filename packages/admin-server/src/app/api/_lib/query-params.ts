@@ -1,4 +1,4 @@
-import { ApiError } from './error-handler.js';
+import { ApiError } from './error-handler';
 
 /**
  * Parse a positive-integer query parameter. Returns undefined if the param is

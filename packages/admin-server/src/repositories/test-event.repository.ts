@@ -1,6 +1,6 @@
 import type { EntityManager } from '@mikro-orm/mysql';
 import type { ReporterEvent } from '@platform/shared';
-import { TestEvent } from '../entities/test-event.entity.js';
+import { TestEvent } from '../entities/test-event.entity';
 
 export class TestEventRepository {
   constructor(private readonly em: EntityManager) {}

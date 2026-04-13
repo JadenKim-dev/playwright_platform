@@ -1,7 +1,7 @@
 import { Entity, PrimaryKey, Property, ManyToOne, Enum, Index } from '@mikro-orm/core';
 import { ReporterEventType } from '@platform/shared';
-import { TestRun } from './test-run.entity.js';
-import { TestRunItem } from './test-run-item.entity.js';
+import { TestRun } from './test-run.entity';
+import { TestRunItem } from './test-run-item.entity';
 
 @Entity({ tableName: 'test_events' })
 @Index({ properties: ['testRun', 'id'] })

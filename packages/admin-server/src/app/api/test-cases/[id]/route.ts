@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getAdminContainer } from '../../../../container.js';
-import { handleRoute, ApiError } from '../../_lib/error-handler.js';
+import { getAdminContainer } from '../../../../container';
+import { handleRoute, ApiError } from '../../_lib/error-handler';
 
 export const dynamic = 'force-dynamic';
 

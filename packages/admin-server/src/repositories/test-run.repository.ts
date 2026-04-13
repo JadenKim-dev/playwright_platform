@@ -1,5 +1,5 @@
 import type { EntityManager } from '@mikro-orm/mysql';
-import { TestRun } from '../entities/test-run.entity.js';
+import { TestRun } from '../entities/test-run.entity';
 
 export class TestRunRepository {
   constructor(private readonly em: EntityManager) {}
