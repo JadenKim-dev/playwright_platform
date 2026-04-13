@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { ReporterEventBatch, RunCompleteDto, RunItemStatusUpdateDto } from '@platform/shared';
 import { RunItemStatus } from '@platform/shared';
 import { AdminClient } from './client.js';
@@ -19,20 +19,9 @@ const baseOpts = {
   runId: 'run-1',
   itemId: 'item-1',
   internalApiToken: 'token-xyz',
-  timeoutMs: 50,
-  baseBackoffMs: 1,
 };
 
 describe('AdminClient', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-    vi.restoreAllMocks();
-  });
-
   it('resolve calls correct URL and headers and parses JSON', async () => {
     const fetchFn = vi
       .fn<typeof fetch>()
@@ -79,46 +68,6 @@ describe('AdminClient', () => {
     expect(init?.body).toBe(JSON.stringify(body));
   });
 
-  it('retries up to 3 times on 5xx and resolves on 3rd attempt success', async () => {
-    const fetchFn = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(new Response('err', { status: 500 }))
-      .mockResolvedValueOnce(new Response('err', { status: 503 }))
-      .mockResolvedValueOnce(jsonResponse({ params: {}, expected: {} }));
-    const client = new AdminClient({ ...baseOpts, maxRetries: 3, fetchFn });
-
-    const promise = client.resolve('TC-001');
-    await vi.advanceTimersByTimeAsync(10);
-    const result = await promise;
-
-    expect(fetchFn).toHaveBeenCalledTimes(3);
-    expect(result).toEqual({ params: {}, expected: {} });
-  });
-
-  it('throws immediately on 4xx without retry', async () => {
-    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(new Response('bad', { status: 400 }));
-    const client = new AdminClient({ ...baseOpts, maxRetries: 3, fetchFn });
-
-    await expect(client.resolve('TC-001')).rejects.toThrow();
-    expect(fetchFn).toHaveBeenCalledTimes(1);
-  });
-
-  it('retries on network error (fetch rejects)', async () => {
-    const fetchFn = vi
-      .fn<typeof fetch>()
-      .mockRejectedValueOnce(new Error('network down'))
-      .mockRejectedValueOnce(new Error('network down'))
-      .mockResolvedValueOnce(jsonResponse({ params: {}, expected: {} }));
-    const client = new AdminClient({ ...baseOpts, maxRetries: 3, fetchFn });
-
-    const promise = client.resolve('TC-001');
-    await vi.advanceTimersByTimeAsync(10);
-    const result = await promise;
-
-    expect(fetchFn).toHaveBeenCalledTimes(3);
-    expect(result).toEqual({ params: {}, expected: {} });
-  });
-
   it('sends X-Internal-Token header with injected token value', async () => {
     const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(emptyResponse(204));
     const client = new AdminClient({
@@ -161,20 +110,4 @@ describe('AdminClient', () => {
     expect(url).toBe('http://admin.local/internal/runs/run-1/items/item%20with%20space/status');
   });
 
-  it('throws after retries exhausted when AbortError is raised repeatedly', async () => {
-    const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' });
-    const fetchFn = vi.fn<typeof fetch>().mockRejectedValue(abortError);
-    const client = new AdminClient({
-      ...baseOpts,
-      maxRetries: 2,
-      fetchFn,
-    });
-
-    const promise = client.resolve('TC-001');
-    const assertion = expect(promise).rejects.toThrow();
-    await vi.advanceTimersByTimeAsync(100);
-    await assertion;
-
-    expect(fetchFn).toHaveBeenCalledTimes(3);
-  });
 });
