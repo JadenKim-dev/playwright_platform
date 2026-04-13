@@ -1,5 +1,3 @@
-import { z } from 'zod/v4';
-
 export interface PlatformEnv {
   runId: string;
   itemId: string;
@@ -9,37 +7,40 @@ export interface PlatformEnv {
   reporterFlushIntervalMs: number;
 }
 
-const requiredString = z.string().min(1);
-const positiveIntWithDefault = (fallback: number) =>
-  z.preprocess(
-    (v) => (v === undefined || v === '' ? fallback : Number(v)),
-    z.number().int().positive(),
-  );
-
-const schema = z.object({
-  PLATFORM_RUN_ID: requiredString,
-  PLATFORM_ITEM_ID: requiredString,
-  PLATFORM_ADMIN_URL: requiredString,
-  PLATFORM_INTERNAL_API_TOKEN: requiredString,
-  PLATFORM_REPORTER_CHUNK_SIZE: positiveIntWithDefault(50),
-  PLATFORM_REPORTER_FLUSH_INTERVAL_MS: positiveIntWithDefault(2000),
-});
-
 export function loadPlatformEnv(source: NodeJS.ProcessEnv = process.env): PlatformEnv {
-  const result = schema.safeParse(source);
-  if (!result.success) {
-    const messages = result.error.issues.map(
-      (issue) => `${issue.path.join('.')}: ${issue.message}`,
-    );
-    throw new Error(`Invalid env:\n  - ${messages.join('\n  - ')}`);
-  }
-  const parsed = result.data;
-  return {
-    runId: parsed.PLATFORM_RUN_ID,
-    itemId: parsed.PLATFORM_ITEM_ID,
-    adminUrl: parsed.PLATFORM_ADMIN_URL,
-    internalApiToken: parsed.PLATFORM_INTERNAL_API_TOKEN,
-    reporterChunkSize: parsed.PLATFORM_REPORTER_CHUNK_SIZE,
-    reporterFlushIntervalMs: parsed.PLATFORM_REPORTER_FLUSH_INTERVAL_MS,
+  const errors: string[] = [];
+
+  const requireString = (key: string): string => {
+    const value = source[key];
+    if (value === undefined || value === '') {
+      errors.push(`${key}: required`);
+      return '';
+    }
+    return value;
   };
+
+  const parsePositiveInt = (key: string, fallback: number): number => {
+    const raw = source[key];
+    if (raw === undefined || raw === '') return fallback;
+    const value = Number(raw);
+    if (!Number.isInteger(value) || value <= 0) {
+      errors.push(`${key}: must be a positive integer`);
+      return fallback;
+    }
+    return value;
+  };
+
+  const env: PlatformEnv = {
+    runId: requireString('PLATFORM_RUN_ID'),
+    itemId: requireString('PLATFORM_ITEM_ID'),
+    adminUrl: requireString('PLATFORM_ADMIN_URL'),
+    internalApiToken: requireString('PLATFORM_INTERNAL_API_TOKEN'),
+    reporterChunkSize: parsePositiveInt('PLATFORM_REPORTER_CHUNK_SIZE', 50),
+    reporterFlushIntervalMs: parsePositiveInt('PLATFORM_REPORTER_FLUSH_INTERVAL_MS', 2000),
+  };
+
+  if (errors.length > 0) {
+    throw new Error(`Invalid env:\n  - ${errors.join('\n  - ')}`);
+  }
+  return env;
 }
