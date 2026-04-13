@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, ManyToOne, Unique, Index } from '@mikro-orm/core';
+import { Entity, PrimaryKey, ManyToOne, Unique, Index } from '@mikro-orm/core';
 import { v4 as uuidv4 } from 'uuid';
 import { Deployment } from './deployment.entity.js';
 import { TestCase } from './test-case.entity.js';
