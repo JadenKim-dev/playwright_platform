@@ -1,6 +1,25 @@
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { MikroORM, EntityManager } from '@mikro-orm/mysql';
 import { getOrm, closeOrm } from '../../src/db/orm.js';
+import { TestCase } from '../../src/entities/test-case.entity.js';
+import { Deployment } from '../../src/entities/deployment.entity.js';
+import { TestFile } from '../../src/entities/test-file.entity.js';
+import { TestCaseMapping } from '../../src/entities/test-case-mapping.entity.js';
+import { TestRun } from '../../src/entities/test-run.entity.js';
+import { TestRunItem } from '../../src/entities/test-run-item.entity.js';
+import { TestEvent } from '../../src/entities/test-event.entity.js';
+
+// Pass entities to MikroORM as class references so Vitest doesn't hit the
+// `entitiesTs` glob, which the ESM loader can't parse directly under vite-node.
+const ENTITIES = [
+  TestCase,
+  Deployment,
+  TestFile,
+  TestCaseMapping,
+  TestRun,
+  TestRunItem,
+  TestEvent,
+];
 
 export interface MysqlHarness {
   container: StartedTestContainer;
@@ -41,7 +60,7 @@ export async function startMysqlHarness(): Promise<MysqlHarness> {
     process.env.DATABASE_URL = dbUrl;
 
     await closeOrm();
-    orm = await getOrm({ clientUrl: dbUrl });
+    orm = await getOrm({ clientUrl: dbUrl, entities: ENTITIES });
     // Vitest (esbuild) doesn't reliably read MikroORM's ts glob for migrations;
     // SchemaGenerator builds the schema directly from entity metadata. Production
     // uses migrations via `mikro-orm migration:up`.

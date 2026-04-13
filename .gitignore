@@ -14,6 +14,8 @@ coverage/
 
 # MikroORM
 migrations/.snapshot-*
+# ts-morph metadata cache emitted by TsMorphMetadataProvider
+temp/
 
 # Logs
 npm-debug.log*
