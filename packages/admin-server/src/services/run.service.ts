@@ -104,7 +104,8 @@ export class RunService {
     await this.em.flush();
 
     // Publish after flush so consumers never see a message referencing a row
-    // that is not yet committed.
+    // that is not yet committed. Phase 3b will add retry/DLQ; a partial publish
+    // failure here leaves the run Queued and requires manual intervention.
     for (const item of items) {
       const message: RunItemExecuteMessage = {
         runId: run.id,
