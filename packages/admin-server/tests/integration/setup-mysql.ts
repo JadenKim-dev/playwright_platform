@@ -29,20 +29,30 @@ export async function startMysqlHarness(): Promise<MysqlHarness> {
     .withStartupTimeout(120_000)
     .start();
 
-  const port = container.getMappedPort(3306);
-  const host = container.getHost();
-  const dbUrl = `mysql://platform:platform@${host}:${port}/platform_test`;
-  process.env.DATABASE_URL = dbUrl;
+  // Ensure the container is stopped if any setup step after .start() fails;
+  // otherwise the test's beforeAll throws and afterAll never runs.
+  let orm: MikroORM;
+  let em: EntityManager;
+  let dbUrl: string;
+  try {
+    const port = container.getMappedPort(3306);
+    const host = container.getHost();
+    dbUrl = `mysql://platform:platform@${host}:${port}/platform_test`;
+    process.env.DATABASE_URL = dbUrl;
 
-  await closeOrm();
-  const orm = await getOrm({ clientUrl: dbUrl });
-  // Vitest (esbuild) doesn't reliably read MikroORM's ts glob for migrations;
-  // SchemaGenerator builds the schema directly from entity metadata. Production
-  // uses migrations via `mikro-orm migration:up`.
-  const generator = orm.getSchemaGenerator();
-  await generator.refreshDatabase();
+    await closeOrm();
+    orm = await getOrm({ clientUrl: dbUrl });
+    // Vitest (esbuild) doesn't reliably read MikroORM's ts glob for migrations;
+    // SchemaGenerator builds the schema directly from entity metadata. Production
+    // uses migrations via `mikro-orm migration:up`.
+    const generator = orm.getSchemaGenerator();
+    await generator.refreshDatabase();
 
-  const em = orm.em.fork();
+    em = orm.em.fork();
+  } catch (err) {
+    await container.stop().catch(() => {});
+    throw err;
+  }
 
   return {
     container,
