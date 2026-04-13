@@ -51,8 +51,8 @@ describe('testCase wrapper', () => {
     const client = makeClient({ params: {}, expected: {} });
     const testCase = createTestCase({
       test: mockTest as unknown as Parameters<typeof createTestCase>[0]['test'],
-      createClient: () => client,
-      loadEnv: () => fakeEnv,
+      createAdminClient: () => client,
+      loadPlatformEnv: () => fakeEnv,
     });
 
     testCase('TC-001', async () => {});
@@ -71,8 +71,8 @@ describe('testCase wrapper', () => {
     const userFn = vi.fn(async () => {});
     const testCase = createTestCase({
       test: mockTest as unknown as Parameters<typeof createTestCase>[0]['test'],
-      createClient: () => client,
-      loadEnv: () => fakeEnv,
+      createAdminClient: () => client,
+      loadPlatformEnv: () => fakeEnv,
     });
 
     testCase('TC-001', userFn);
@@ -93,8 +93,8 @@ describe('testCase wrapper', () => {
     const client = { resolve: resolveSpy } as unknown as AdminClient;
     const testCase = createTestCase({
       test: mockTest as unknown as Parameters<typeof createTestCase>[0]['test'],
-      createClient: () => client,
-      loadEnv: () => fakeEnv,
+      createAdminClient: () => client,
+      loadPlatformEnv: () => fakeEnv,
     });
 
     testCase('TC-042', async () => {});
@@ -109,8 +109,8 @@ describe('testCase wrapper', () => {
     const client = makeClient(resolved);
     const testCase = createTestCase({
       test: mockTest as unknown as Parameters<typeof createTestCase>[0]['test'],
-      createClient: () => client,
-      loadEnv: () => fakeEnv,
+      createAdminClient: () => client,
+      loadPlatformEnv: () => fakeEnv,
     });
 
     testCase('TC-001', async () => {});
@@ -127,8 +127,8 @@ describe('testCase wrapper', () => {
     const userFn = vi.fn(async () => {});
     const testCase = createTestCase({
       test: mockTest as unknown as Parameters<typeof createTestCase>[0]['test'],
-      createClient: () => client,
-      loadEnv: () => fakeEnv,
+      createAdminClient: () => client,
+      loadPlatformEnv: () => fakeEnv,
     });
 
     testCase('TC-001', userFn);
