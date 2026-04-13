@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { DeploymentStatus } from '@platform/shared';
 import { getAdminContainer } from '../../../container.js';
 import { handleRoute, ApiError } from '../_lib/error-handler.js';
+import { parsePositiveIntParam } from '../_lib/query-params.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,10 +13,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   return handleRoute(async () => {
     const url = new URL(req.url);
     const status = url.searchParams.get('status');
-    const page = url.searchParams.get('page') ? Number(url.searchParams.get('page')) : undefined;
-    const validStatus = status && (Object.values(DeploymentStatus) as string[]).includes(status)
-      ? (status as DeploymentStatus)
-      : undefined;
+    const page = parsePositiveIntParam(url, 'page');
+    if (status && !(Object.values(DeploymentStatus) as string[]).includes(status)) {
+      throw new ApiError(400, `invalid status: ${status}`, 'invalid_input');
+    }
+    const validStatus = status ? (status as DeploymentStatus) : undefined;
     const container = await getAdminContainer();
     const result = await container.deploymentService.list({ status: validStatus, page });
     return NextResponse.json(result);

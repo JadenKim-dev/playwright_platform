@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { getAdminContainer } from '../../../container.js';
 import { handleRoute, ApiError } from '../_lib/error-handler.js';
+import { parsePositiveIntParam } from '../_lib/query-params.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ const CreateSchema = z.object({
 export async function GET(req: NextRequest): Promise<NextResponse> {
   return handleRoute(async () => {
     const url = new URL(req.url);
-    const page = url.searchParams.get('page') ? Number(url.searchParams.get('page')) : undefined;
+    const page = parsePositiveIntParam(url, 'page');
     const container = await getAdminContainer();
     const result = await container.runService.list({ page });
     return NextResponse.json(result);
