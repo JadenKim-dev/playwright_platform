@@ -49,7 +49,8 @@ export interface AdminContainer {
 export async function getAdminContainer(): Promise<AdminContainer> {
   const orm = await getOrm();
   const em = orm.em.fork();
-  const adminBaseUrl = overrides.adminBaseUrl ?? process.env.ADMIN_URL ?? 'http://admin:3000';
+  // `||` (not `??`) so an empty ADMIN_URL env var falls back to the docker-compose default.
+  const adminBaseUrl = overrides.adminBaseUrl || process.env.ADMIN_URL || 'http://admin:3000';
   const publisher = overrides.publisher ?? new NoopRunQueuePublisher();
   const storage = overrides.storage ?? new NoopObjectStorageClient();
   const trigger = overrides.trigger ?? new NoopDeployTrigger();
