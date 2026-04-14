@@ -25,14 +25,14 @@ export class AdminClient {
   private readonly runId: string;
   private readonly itemId: string;
   private readonly token: string;
-  private readonly http: HttpClient;
+  private readonly httpClient: HttpClient;
 
   constructor(opts: AdminClientOptions) {
     this.adminUrl = opts.adminUrl.replace(/\/$/, '');
     this.runId = opts.runId;
     this.itemId = opts.itemId;
     this.token = opts.internalApiToken;
-    this.http = new HttpClient({
+    this.httpClient = new HttpClient({
       timeoutMs: opts.timeoutMs,
       maxRetries: opts.maxRetries,
       baseBackoffMs: opts.baseBackoffMs,
@@ -61,7 +61,7 @@ export class AdminClient {
   }
 
   private async request<T>(method: string, url: string, body?: unknown): Promise<T> {
-    return this.http.requestJson<T>(method, url, {
+    return this.httpClient.requestJson<T>(method, url, {
       headers: {
         'Content-Type': 'application/json',
         'X-Internal-Token': this.token,
