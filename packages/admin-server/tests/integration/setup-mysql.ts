@@ -1,6 +1,6 @@
 import { GenericContainer, type StartedTestContainer, Wait } from 'testcontainers';
 import type { MikroORM, EntityManager } from '@mikro-orm/mysql';
-import { getOrm, closeOrm } from '../../src/db/orm.js';
+import { initOrm, closeOrm } from '../../src/db/orm.js';
 import { TestCase } from '../../src/entities/test-case.entity.js';
 import { Deployment } from '../../src/entities/deployment.entity.js';
 import { TestFile } from '../../src/entities/test-file.entity.js';
@@ -60,12 +60,12 @@ export async function startMysqlHarness(): Promise<MysqlHarness> {
     process.env.DATABASE_URL = dbUrl;
 
     await closeOrm();
-    orm = await getOrm({ clientUrl: dbUrl, entities: ENTITIES });
+    // Pass entity classes directly (not the entitiesTs glob) — see ENTITIES comment above.
+    orm = await initOrm({ clientUrl: dbUrl, entities: ENTITIES, entitiesTs: ENTITIES });
     // Vitest (esbuild) doesn't reliably read MikroORM's ts glob for migrations;
     // SchemaGenerator builds the schema directly from entity metadata. Production
     // uses migrations via `mikro-orm migration:up`.
-    const generator = orm.getSchemaGenerator();
-    await generator.refreshDatabase();
+    await orm.schema.refreshDatabase();
 
     em = orm.em.fork();
   } catch (err) {

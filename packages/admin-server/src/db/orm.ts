@@ -1,24 +1,19 @@
-import { MikroORM, type EntityClass } from '@mikro-orm/mysql';
+import { MikroORM, type Options } from '@mikro-orm/mysql';
 import config from '../../mikro-orm.config';
 
 let ormPromise: Promise<MikroORM> | null = null;
 
-// Overrides apply only on first init per process. Integration tests must call
-// closeOrm() before passing a new clientUrl, otherwise the override is ignored.
-export function getOrm(overrides?: {
-  clientUrl?: string;
-  entities?: EntityClass<object>[];
-}): Promise<MikroORM> {
+export function initOrm(overrideConfig?: Partial<Options>): Promise<MikroORM> {
+  if (ormPromise) {
+    throw new Error('ORM already initialized; call closeOrm() before initOrm().');
+  }
+  ormPromise = MikroORM.init({ ...config, ...overrideConfig });
+  return ormPromise;
+}
+
+export function getOrm(): Promise<MikroORM> {
   if (!ormPromise) {
-    ormPromise = MikroORM.init({
-      ...config,
-      ...(overrides?.clientUrl ? { clientUrl: overrides.clientUrl } : {}),
-      ...(overrides?.entities
-        ? // Pass class references directly so Vitest (esbuild) doesn't need to
-          // resolve the TS glob through Node's ESM loader, which fails on raw .ts.
-          { entities: overrides.entities, entitiesTs: overrides.entities }
-        : {}),
-    });
+    ormPromise = MikroORM.init(config);
   }
   return ormPromise;
 }
