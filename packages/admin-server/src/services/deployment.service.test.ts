@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DeploymentService } from '../../src/services/deployment.service.js';
+import { DeploymentService } from './deployment.service.js';
 import { DeploymentStatus } from '@platform/shared';
 
 // Minimal entity-like fixture for tests; shape matches Deployment entity fields used by the mapper.

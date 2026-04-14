@@ -7,8 +7,8 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "test": "vitest run tests/unit",
-    "test:unit": "vitest run tests/unit",
+    "test": "vitest run src",
+    "test:unit": "vitest run src",
     "test:integration": "vitest run tests/integration",
     "lint": "next lint",
     "mikro-orm": "mikro-orm --config ./mikro-orm.config.ts"

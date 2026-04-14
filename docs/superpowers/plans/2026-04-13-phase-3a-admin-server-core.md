@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Convention update (post-implementation):** Unit tests are now co-located with their source file under `src/services/*.service.test.ts` instead of `tests/unit/`. Only integration tests remain under `tests/integration/`. Historical paths below (`tests/unit/...`) reflect the original plan; the current layout, `vitest.config.ts` include pattern, and `package.json` test scripts have been updated accordingly.
+
 **Goal:** Next.js 기반 admin-server 패키지를 만들고, 7개 MikroORM 엔티티 + 마이그레이션 + 비즈니스 서비스 + 공개 REST API(브라우저용)까지 동작시킨다. 외부 의존(RabbitMQ publisher, MinIO, deploy-server)은 인터페이스로 추상화하고 stub 구현을 주입해 단독 실행 가능한 상태를 만든다. 실제 큐/스토리지 연결과 internal API, UI는 Phase 3b에서 다룬다.
 
 **Architecture:**

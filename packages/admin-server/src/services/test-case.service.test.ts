@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TestCaseService } from '../../src/services/test-case.service.js';
-import { ApiError } from '../../src/app/api/_lib/error-handler.js';
+import { TestCaseService } from './test-case.service.js';
+import { ApiError } from '../app/api/_lib/error-handler.js';
 
 // Minimal entity-like fixture for tests; shape matches TestCase entity fields used by the mapper.
 const makeEntity = (over: Partial<Record<string, unknown>> = {}) => ({

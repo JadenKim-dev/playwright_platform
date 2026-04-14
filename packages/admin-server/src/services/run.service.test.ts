@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RunService } from '../../src/services/run.service.js';
+import { RunService } from './run.service.js';
 import { RunStatus, RunItemStatus, DeploymentStatus } from '@platform/shared';
 
 describe('RunService', () => {

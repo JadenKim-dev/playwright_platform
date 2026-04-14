@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EventIngestService } from '../../src/services/event-ingest.service.js';
+import { EventIngestService } from './event-ingest.service.js';
 import {
   ReporterEventType,
   RunItemStatus,
