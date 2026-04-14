@@ -3,23 +3,23 @@ import { DeploymentService } from './deployment.service.js';
 import { DeploymentStatus } from '@platform/shared';
 
 // Minimal entity-like fixture for tests; shape matches Deployment entity fields used by the mapper.
-const makeDep = (over: Partial<Record<string, unknown>> = {}) => ({
+const makeDeployment = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: 'dep-1',
   gitRef: 'main',
   status: DeploymentStatus.Pending,
   errorMessage: null,
   startedAt: new Date('2026-04-13T00:00:00Z'),
   finishedAt: null,
-  ...over,
+  ...overrides,
 });
 
 describe('DeploymentService', () => {
-  let depRepo: {
+  let deploymentRepository: {
     list: ReturnType<typeof vi.fn>;
     findById: ReturnType<typeof vi.fn>;
     findLatestSuccess: ReturnType<typeof vi.fn>;
   };
-  let fileRepo: { findByDeploymentId: ReturnType<typeof vi.fn> };
+  let testFileRepository: { findByDeploymentId: ReturnType<typeof vi.fn> };
   let trigger: { trigger: ReturnType<typeof vi.fn> };
   let em: {
     flush: ReturnType<typeof vi.fn>;
@@ -28,17 +28,17 @@ describe('DeploymentService', () => {
   let service: DeploymentService;
 
   beforeEach(() => {
-    depRepo = { list: vi.fn(), findById: vi.fn(), findLatestSuccess: vi.fn() };
-    fileRepo = { findByDeploymentId: vi.fn() };
+    deploymentRepository = { list: vi.fn(), findById: vi.fn(), findLatestSuccess: vi.fn() };
+    testFileRepository = { findByDeploymentId: vi.fn() };
     trigger = { trigger: vi.fn().mockResolvedValue(undefined) };
     em = {
       flush: vi.fn().mockResolvedValue(undefined),
-      create: vi.fn((_cls, data) => ({ ...makeDep(), ...data })),
+      create: vi.fn((_cls, data) => ({ ...makeDeployment(), ...data })),
     };
     service = new DeploymentService(
       em as any,
-      depRepo as any,
-      fileRepo as any,
+      deploymentRepository as any,
+      testFileRepository as any,
       trigger as any,
     );
   });
@@ -60,27 +60,27 @@ describe('DeploymentService', () => {
   });
 
   it('list — delegates pagination to the repository', async () => {
-    depRepo.list.mockResolvedValue({ items: [makeDep()], total: 1 });
+    deploymentRepository.list.mockResolvedValue({ items: [makeDeployment()], total: 1 });
     const result = await service.list({ page: 2, pageSize: 10 });
-    expect(depRepo.list).toHaveBeenCalledWith({ page: 2, pageSize: 10, status: undefined });
+    expect(deploymentRepository.list).toHaveBeenCalledWith({ page: 2, pageSize: 10, status: undefined });
     expect(result.total).toBe(1);
     expect(result.items[0]?.id).toBe('dep-1');
   });
 
   it('getById — throws 404 when the deployment is not found', async () => {
-    depRepo.findById.mockResolvedValue(null);
+    deploymentRepository.findById.mockResolvedValue(null);
     await expect(service.getById('x')).rejects.toMatchObject({ status: 404 });
   });
 
   it('listTestFiles — throws 404 when the deployment is missing', async () => {
-    depRepo.findById.mockResolvedValue(null);
+    deploymentRepository.findById.mockResolvedValue(null);
     await expect(service.listTestFiles('x')).rejects.toMatchObject({ status: 404 });
-    expect(fileRepo.findByDeploymentId).not.toHaveBeenCalled();
+    expect(testFileRepository.findByDeploymentId).not.toHaveBeenCalled();
   });
 
   it('listTestFiles — delegates to the repository and maps to DTOs', async () => {
-    depRepo.findById.mockResolvedValue(makeDep());
-    fileRepo.findByDeploymentId.mockResolvedValue([
+    deploymentRepository.findById.mockResolvedValue(makeDeployment());
+    testFileRepository.findByDeploymentId.mockResolvedValue([
       {
         id: 'f1',
         deployment: { id: 'dep-1' },

@@ -7,9 +7,9 @@ import { ApiError } from './error-handler';
 export function parsePositiveIntParam(url: URL, key: string): number | undefined {
   const raw = url.searchParams.get(key);
   if (raw === null) return undefined;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n <= 0) {
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new ApiError(400, `invalid ${key} query parameter`, 'invalid_input');
   }
-  return n;
+  return parsed;
 }

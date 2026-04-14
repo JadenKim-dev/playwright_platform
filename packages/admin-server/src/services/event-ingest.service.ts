@@ -47,8 +47,8 @@ export class EventIngestService {
   async completeRun(runId: string, body: RunCompleteDto): Promise<void> {
     const run = await this.testRunRepository.findById(runId);
     if (!run) throw new ApiError(404, `run ${runId} not found`, 'not_found');
-    const items = await this.testRunItemRepository.findByRunId(runId);
-    run.status = this.rollupStatus(items.map((i) => i.status));
+    const runItems = await this.testRunItemRepository.findByRunId(runId);
+    run.status = this.rollupStatus(runItems.map((runItem) => runItem.status));
     run.finishedAt = new Date();
     if (body.playwrightReportKey !== undefined) {
       run.playwrightReportKey = body.playwrightReportKey;
@@ -56,23 +56,23 @@ export class EventIngestService {
     await this.em.flush();
   }
 
-  private isTerminal(s: RunItemStatus): boolean {
+  private isTerminal(status: RunItemStatus): boolean {
     return (
-      s === RunItemStatus.Passed ||
-      s === RunItemStatus.Failed ||
-      s === RunItemStatus.Skipped ||
-      s === RunItemStatus.Timedout
+      status === RunItemStatus.Passed ||
+      status === RunItemStatus.Failed ||
+      status === RunItemStatus.Skipped ||
+      status === RunItemStatus.Timedout
     );
   }
 
   private rollupStatus(itemStatuses: RunItemStatus[]): RunStatus {
     // All terminal-success-like items -> overall success
     const allPassed = itemStatuses.every(
-      (s) => s === RunItemStatus.Passed || s === RunItemStatus.Skipped,
+      (status) => status === RunItemStatus.Passed || status === RunItemStatus.Skipped,
     );
     if (allPassed) return RunStatus.Success;
     // At least one passed among mixed results -> partial success
-    const anyPassed = itemStatuses.some((s) => s === RunItemStatus.Passed);
+    const anyPassed = itemStatuses.some((status) => status === RunItemStatus.Passed);
     return anyPassed ? RunStatus.Partial : RunStatus.Failed;
   }
 }

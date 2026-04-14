@@ -44,83 +44,91 @@ export class RunService {
 
     // Spec §6.2: a run always executes against the latest successful deployment
     // so the bundle key and TC mapping line up with what worker nodes can fetch.
-    const dep = await this.deploymentRepository.findLatestSuccess();
-    if (!dep) {
+    const latestDeployment = await this.deploymentRepository.findLatestSuccess();
+    if (!latestDeployment) {
       throw new ApiError(409, 'no successful deployment available', 'no_deployment');
     }
 
-    const tcs = await this.testCaseRepository.findByIds(dto.testCaseIds);
-    const tcById = new Map(tcs.map((t) => [t.id, t]));
-    const missingTcs = dto.testCaseIds.filter((id) => !tcById.has(id));
-    if (missingTcs.length > 0) {
-      throw new ApiError(400, `unknown test cases: ${missingTcs.join(',')}`, 'unknown_tc');
+    const testCases = await this.testCaseRepository.findByIds(dto.testCaseIds);
+    const testCaseById = new Map(testCases.map((testCase) => [testCase.id, testCase]));
+    const missingTestCaseIds = dto.testCaseIds.filter((id) => !testCaseById.has(id));
+    if (missingTestCaseIds.length > 0) {
+      throw new ApiError(
+        400,
+        `unknown test cases: ${missingTestCaseIds.join(',')}`,
+        'unknown_tc',
+      );
     }
 
     const mappings = await this.testCaseMappingRepository.findByDeploymentAndTcs(
-      dep.id,
+      latestDeployment.id,
       dto.testCaseIds,
     );
-    const mapByTc = new Map(mappings.map((m) => [m.testCase.id, m]));
-    const unmapped = dto.testCaseIds.filter((id) => !mapByTc.has(id));
-    if (unmapped.length > 0) {
+    const mappingByTestCaseId = new Map(
+      mappings.map((mapping) => [mapping.testCase.id, mapping]),
+    );
+    const unmappedTestCaseIds = dto.testCaseIds.filter((id) => !mappingByTestCaseId.has(id));
+    if (unmappedTestCaseIds.length > 0) {
       throw new ApiError(
         400,
-        `not mapped in current deployment: ${unmapped.join(',')}`,
+        `not mapped in current deployment: ${unmappedTestCaseIds.join(',')}`,
         'unmapped_tc',
       );
     }
 
     // `partial: true` opts into MikroORM v6's partial input: id / requestedAt /
     // status all have runtime defaults on the entity.
-    const run = this.em.create(
+    const testRun = this.em.create(
       TestRun,
       {
-        deployment: dep,
+        deployment: latestDeployment,
         requestedTestCaseIds: [...dto.testCaseIds],
         status: RunStatus.Queued,
       },
       { partial: true },
     );
 
-    const items: TestRunItem[] = [];
-    for (const tcId of dto.testCaseIds) {
-      const mapping = mapByTc.get(tcId)!;
-      const tc = tcById.get(tcId)!;
-      const overrides = dto.paramOverrides?.[tcId];
-      const item = this.em.create(
+    const runItems: TestRunItem[] = [];
+    for (const testCaseId of dto.testCaseIds) {
+      const mapping = mappingByTestCaseId.get(testCaseId)!;
+      const testCase = testCaseById.get(testCaseId)!;
+      const paramOverrides = dto.paramOverrides?.[testCaseId];
+      const runItem = this.em.create(
         TestRunItem,
         {
-          testRun: run,
-          testCase: tc,
+          testRun,
+          testCase,
           testFile: mapping.testFile,
           status: RunItemStatus.Pending,
           // Snapshot TC params/expected at run creation so later edits to the TC
           // do not retroactively change what the run executed against.
-          paramsSnapshot: overrides ? { ...tc.params, ...overrides } : { ...tc.params },
-          expectedSnapshot: { ...tc.expected },
+          paramsSnapshot: paramOverrides
+            ? { ...testCase.params, ...paramOverrides }
+            : { ...testCase.params },
+          expectedSnapshot: { ...testCase.expected },
         },
         { partial: true },
       );
-      items.push(item);
+      runItems.push(runItem);
     }
     await this.em.flush();
 
     // Publish after flush so consumers never see a message referencing a row
     // that is not yet committed. Phase 3b will add retry/DLQ; a partial publish
     // failure here leaves the run Queued and requires manual intervention.
-    for (const item of items) {
+    for (const runItem of runItems) {
       const message: RunItemExecuteMessage = {
-        runId: run.id,
-        itemId: item.id,
-        deploymentId: dep.id,
-        testCaseId: item.testCase.id,
-        testFileBundleKey: item.testFile.bundleKey,
+        runId: testRun.id,
+        itemId: runItem.id,
+        deploymentId: latestDeployment.id,
+        testCaseId: runItem.testCase.id,
+        testFileBundleKey: runItem.testFile.bundleKey,
         adminBaseUrl: this.adminBaseUrl,
       };
       await this.runQueuePublisher.publish(message);
     }
 
-    return toRunDto(run);
+    return toRunDto(testRun);
   }
 
   async list(query: {
@@ -151,10 +159,10 @@ export class RunService {
   }
 
   async listRunsForTestCase(testCaseId: string): Promise<RunDto[]> {
-    const items = await this.testRunItemRepository.findByTestCaseId(testCaseId);
+    const runItems = await this.testRunItemRepository.findByTestCaseId(testCaseId);
     // Dedup run ids — a TC can appear multiple times across the same run's history.
-    const uniqueIds = [...new Set(items.map((i) => i.testRun.id))];
-    const runs = await this.testRunRepository.findByIds(uniqueIds);
+    const uniqueRunIds = [...new Set(runItems.map((runItem) => runItem.testRun.id))];
+    const runs = await this.testRunRepository.findByIds(uniqueRunIds);
     return runs.map(toRunDto);
   }
 }

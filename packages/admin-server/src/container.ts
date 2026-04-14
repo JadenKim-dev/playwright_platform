@@ -30,8 +30,8 @@ export interface AdminContainerOverrides {
 
 let overrides: AdminContainerOverrides = {};
 
-export function setContainerOverrides(o: AdminContainerOverrides): void {
-  overrides = { ...overrides, ...o };
+export function setContainerOverrides(partialOverrides: AdminContainerOverrides): void {
+  overrides = { ...overrides, ...partialOverrides };
 }
 
 export function resetContainerOverrides(): void {
@@ -55,29 +55,44 @@ export async function getAdminContainer(): Promise<AdminContainer> {
   const storage = overrides.storage ?? new NoopObjectStorageClient();
   const trigger = overrides.trigger ?? new NoopDeployTrigger();
 
-  const testCaseRepo = new TestCaseRepository(em);
-  const deploymentRepo = new DeploymentRepository(em);
-  const fileRepo = new TestFileRepository(em);
-  const mappingRepo = new TestCaseMappingRepository(em);
-  const runRepo = new TestRunRepository(em);
-  const runItemRepo = new TestRunItemRepository(em);
-  const eventRepo = new TestEventRepository(em);
+  const testCaseRepository = new TestCaseRepository(em);
+  const deploymentRepository = new DeploymentRepository(em);
+  const testFileRepository = new TestFileRepository(em);
+  const testCaseMappingRepository = new TestCaseMappingRepository(em);
+  const testRunRepository = new TestRunRepository(em);
+  const testRunItemRepository = new TestRunItemRepository(em);
+  const testEventRepository = new TestEventRepository(em);
 
   return {
     em,
-    testCaseService: new TestCaseService(em, testCaseRepo, mappingRepo, deploymentRepo),
-    deploymentService: new DeploymentService(em, deploymentRepo, fileRepo, trigger),
+    testCaseService: new TestCaseService(
+      em,
+      testCaseRepository,
+      testCaseMappingRepository,
+      deploymentRepository,
+    ),
+    deploymentService: new DeploymentService(
+      em,
+      deploymentRepository,
+      testFileRepository,
+      trigger,
+    ),
     runService: new RunService(
       em,
-      deploymentRepo,
-      testCaseRepo,
-      mappingRepo,
-      runRepo,
-      runItemRepo,
+      deploymentRepository,
+      testCaseRepository,
+      testCaseMappingRepository,
+      testRunRepository,
+      testRunItemRepository,
       publisher,
       storage,
       adminBaseUrl,
     ),
-    eventIngestService: new EventIngestService(em, runRepo, runItemRepo, eventRepo),
+    eventIngestService: new EventIngestService(
+      em,
+      testRunRepository,
+      testRunItemRepository,
+      testEventRepository,
+    ),
   };
 }

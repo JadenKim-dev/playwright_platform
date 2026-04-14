@@ -8,22 +8,22 @@ import {
 } from '@platform/shared';
 
 describe('EventIngestService', () => {
-  let runRepo: any;
-  let runItemRepo: any;
-  let eventRepo: any;
+  let testRunRepository: any;
+  let testRunItemRepository: any;
+  let testEventRepository: any;
   let em: any;
   let service: EventIngestService;
 
   beforeEach(() => {
-    runRepo = { findById: vi.fn() };
-    runItemRepo = { findById: vi.fn(), findByRunId: vi.fn() };
-    eventRepo = { insertBatch: vi.fn() };
+    testRunRepository = { findById: vi.fn() };
+    testRunItemRepository = { findById: vi.fn(), findByRunId: vi.fn() };
+    testEventRepository = { insertBatch: vi.fn() };
     em = { flush: vi.fn().mockResolvedValue(undefined) };
-    service = new EventIngestService(em, runRepo, runItemRepo, eventRepo);
+    service = new EventIngestService(em, testRunRepository, testRunItemRepository, testEventRepository);
   });
 
   it('appendEvents — inserts batch and flushes when run exists', async () => {
-    runRepo.findById.mockResolvedValue({ id: 'r1' });
+    testRunRepository.findById.mockResolvedValue({ id: 'r1' });
     const batch: ReporterEventBatch = {
       events: [
         {
@@ -35,12 +35,12 @@ describe('EventIngestService', () => {
       ],
     };
     await service.appendEvents('r1', batch);
-    expect(eventRepo.insertBatch).toHaveBeenCalledWith('r1', batch.events);
+    expect(testEventRepository.insertBatch).toHaveBeenCalledWith('r1', batch.events);
     expect(em.flush).toHaveBeenCalled();
   });
 
   it('appendEvents — throws 404 when run does not exist', async () => {
-    runRepo.findById.mockResolvedValue(null);
+    testRunRepository.findById.mockResolvedValue(null);
     await expect(service.appendEvents('x', { events: [] })).rejects.toMatchObject({ status: 404 });
   });
 
@@ -53,7 +53,7 @@ describe('EventIngestService', () => {
       finishedAt: null,
       testRun: { id: 'r1' },
     };
-    runItemRepo.findById.mockResolvedValue(item);
+    testRunItemRepository.findById.mockResolvedValue(item);
     await service.updateItemStatus('r1', 'i1', {
       status: RunItemStatus.Passed,
       durationMs: 42,
@@ -65,7 +65,7 @@ describe('EventIngestService', () => {
   });
 
   it('updateItemStatus — throws 404 when item does not exist', async () => {
-    runItemRepo.findById.mockResolvedValue(null);
+    testRunItemRepository.findById.mockResolvedValue(null);
     await expect(
       service.updateItemStatus('r1', 'i1', { status: RunItemStatus.Passed }),
     ).rejects.toMatchObject({ status: 404 });
@@ -80,7 +80,7 @@ describe('EventIngestService', () => {
       finishedAt: null,
       testRun: { id: 'other-run' },
     };
-    runItemRepo.findById.mockResolvedValue(item);
+    testRunItemRepository.findById.mockResolvedValue(item);
     await expect(
       service.updateItemStatus('r1', 'i1', { status: RunItemStatus.Passed }),
     ).rejects.toMatchObject({ status: 404 });
@@ -94,8 +94,8 @@ describe('EventIngestService', () => {
       finishedAt: null,
       playwrightReportKey: null,
     };
-    runRepo.findById.mockResolvedValue(run);
-    runItemRepo.findByRunId.mockResolvedValue([
+    testRunRepository.findById.mockResolvedValue(run);
+    testRunItemRepository.findByRunId.mockResolvedValue([
       { status: RunItemStatus.Passed },
       { status: RunItemStatus.Passed },
     ]);
@@ -112,8 +112,8 @@ describe('EventIngestService', () => {
       finishedAt: null,
       playwrightReportKey: null,
     };
-    runRepo.findById.mockResolvedValue(run);
-    runItemRepo.findByRunId.mockResolvedValue([
+    testRunRepository.findById.mockResolvedValue(run);
+    testRunItemRepository.findByRunId.mockResolvedValue([
       { status: RunItemStatus.Failed },
       { status: RunItemStatus.Timedout },
     ]);
@@ -128,8 +128,8 @@ describe('EventIngestService', () => {
       finishedAt: null,
       playwrightReportKey: null,
     };
-    runRepo.findById.mockResolvedValue(run);
-    runItemRepo.findByRunId.mockResolvedValue([
+    testRunRepository.findById.mockResolvedValue(run);
+    testRunItemRepository.findByRunId.mockResolvedValue([
       { status: RunItemStatus.Passed },
       { status: RunItemStatus.Failed },
     ]);

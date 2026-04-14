@@ -30,7 +30,7 @@ export class TestCaseService {
       pageSize: query.pageSize,
     });
     const activeIds = await this.computeActiveIds();
-    const mapped = items.map((e) => toTestCaseDto(e, activeIds.has(e.id)));
+    const mapped = items.map((entity) => toTestCaseDto(entity, activeIds.has(entity.id)));
     if (query.activeOnly) {
       const filtered = mapped.filter((dto) => dto.isActive);
       return { items: filtered, total: filtered.length };
@@ -59,16 +59,16 @@ export class TestCaseService {
   }
 
   async listRunnable(): Promise<TestCaseDto[]> {
-    const dep = await this.deploymentRepository.findLatestSuccess();
-    if (!dep) return [];
-    const mappings = await this.testCaseMappingRepository.findByDeploymentId(dep.id);
-    return mappings.map((m) => toTestCaseDto(m.testCase, true));
+    const latestDeployment = await this.deploymentRepository.findLatestSuccess();
+    if (!latestDeployment) return [];
+    const mappings = await this.testCaseMappingRepository.findByDeploymentId(latestDeployment.id);
+    return mappings.map((mapping) => toTestCaseDto(mapping.testCase, true));
   }
 
   private async computeActiveIds(): Promise<Set<string>> {
-    const dep = await this.deploymentRepository.findLatestSuccess();
-    if (!dep) return new Set();
-    const mappings = await this.testCaseMappingRepository.findByDeploymentId(dep.id);
-    return new Set(mappings.map((m) => m.testCase.id));
+    const latestDeployment = await this.deploymentRepository.findLatestSuccess();
+    if (!latestDeployment) return new Set();
+    const mappings = await this.testCaseMappingRepository.findByDeploymentId(latestDeployment.id);
+    return new Set(mappings.map((mapping) => mapping.testCase.id));
   }
 }
