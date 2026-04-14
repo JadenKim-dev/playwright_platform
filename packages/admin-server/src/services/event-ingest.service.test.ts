@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { EntityManager } from '@mikro-orm/mysql';
 import { EventIngestService } from './event-ingest.service.js';
 import {
   ReporterEventType,
@@ -6,12 +7,21 @@ import {
   RunStatus,
   type ReporterEventBatch,
 } from '@platform/shared';
+import type { TestRunRepository } from '../repositories/test-run.repository.js';
+import type { TestRunItemRepository } from '../repositories/test-run-item.repository.js';
+import type { TestEventRepository } from '../repositories/test-event.repository.js';
+import { mock } from '../testing/mock.js';
 
 describe('EventIngestService', () => {
-  let testRunRepository: any;
-  let testRunItemRepository: any;
-  let testEventRepository: any;
-  let em: any;
+  let testRunRepository: {
+    findById: ReturnType<typeof vi.fn>;
+  };
+  let testRunItemRepository: {
+    findById: ReturnType<typeof vi.fn>;
+    findByRunId: ReturnType<typeof vi.fn>;
+  };
+  let testEventRepository: { insertBatch: ReturnType<typeof vi.fn> };
+  let em: { flush: ReturnType<typeof vi.fn> };
   let service: EventIngestService;
 
   beforeEach(() => {
@@ -19,7 +29,12 @@ describe('EventIngestService', () => {
     testRunItemRepository = { findById: vi.fn(), findByRunId: vi.fn() };
     testEventRepository = { insertBatch: vi.fn() };
     em = { flush: vi.fn().mockResolvedValue(undefined) };
-    service = new EventIngestService(em, testRunRepository, testRunItemRepository, testEventRepository);
+    service = new EventIngestService(
+      mock<EntityManager>(em),
+      mock<TestRunRepository>(testRunRepository),
+      mock<TestRunItemRepository>(testRunItemRepository),
+      mock<TestEventRepository>(testEventRepository),
+    );
   });
 
   it('appendEvents — inserts batch and flushes when run exists', async () => {

@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { EntityManager } from '@mikro-orm/mysql';
 import { TestCaseService } from './test-case.service.js';
 import { ApiError } from '../app/api/_lib/error-handler.js';
+import type { TestCaseRepository } from '../repositories/test-case.repository.js';
+import type { TestCaseMappingRepository } from '../repositories/test-case-mapping.repository.js';
+import type { DeploymentRepository } from '../repositories/deployment.repository.js';
+import { mock } from '../testing/mock.js';
 
 // Minimal entity-like fixture for tests; shape matches TestCase entity fields used by the mapper.
 const makeEntity = (overrides: Partial<Record<string, unknown>> = {}) => ({
@@ -37,10 +42,10 @@ describe('TestCaseService', () => {
     deploymentRepository = { findLatestSuccess: vi.fn() };
     em = { flush: vi.fn() };
     service = new TestCaseService(
-      em as any,
-      testCaseRepository as any,
-      testCaseMappingRepository as any,
-      deploymentRepository as any,
+      mock<EntityManager>(em),
+      mock<TestCaseRepository>(testCaseRepository),
+      mock<TestCaseMappingRepository>(testCaseMappingRepository),
+      mock<DeploymentRepository>(deploymentRepository),
     );
   });
 

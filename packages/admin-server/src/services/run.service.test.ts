@@ -1,16 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { EntityManager } from '@mikro-orm/mysql';
 import { RunService } from './run.service.js';
 import { RunStatus, RunItemStatus, DeploymentStatus } from '@platform/shared';
+import type { DeploymentRepository } from '../repositories/deployment.repository.js';
+import type { TestCaseRepository } from '../repositories/test-case.repository.js';
+import type { TestCaseMappingRepository } from '../repositories/test-case-mapping.repository.js';
+import type { TestRunRepository } from '../repositories/test-run.repository.js';
+import type { TestRunItemRepository } from '../repositories/test-run-item.repository.js';
+import type { RunQueuePublisher } from '../queue/run-queue-publisher.js';
+import type { ObjectStorageClient } from '../storage/object-storage-client.js';
+import { mock } from '../testing/mock.js';
 
 describe('RunService', () => {
-  let deploymentRepository: any;
-  let testCaseRepository: any;
-  let testCaseMappingRepository: any;
-  let testRunRepository: any;
-  let testRunItemRepository: any;
+  let deploymentRepository: { findLatestSuccess: ReturnType<typeof vi.fn> };
+  let testCaseRepository: { findByIds: ReturnType<typeof vi.fn> };
+  let testCaseMappingRepository: { findByDeploymentAndTcs: ReturnType<typeof vi.fn> };
+  let testRunRepository: {
+    list: ReturnType<typeof vi.fn>;
+    findById: ReturnType<typeof vi.fn>;
+    findByIds: ReturnType<typeof vi.fn>;
+  };
+  let testRunItemRepository: {
+    findByRunId: ReturnType<typeof vi.fn>;
+    findByTestCaseId: ReturnType<typeof vi.fn>;
+  };
   let storage: { presignedGetUrl: ReturnType<typeof vi.fn> };
   let publisher: { publish: ReturnType<typeof vi.fn> };
-  let em: any;
+  let em: {
+    create: ReturnType<typeof vi.fn>;
+    flush: ReturnType<typeof vi.fn>;
+    transactional: ReturnType<typeof vi.fn>;
+  };
   let service: RunService;
 
   beforeEach(() => {
@@ -24,7 +44,7 @@ describe('RunService', () => {
     em = {
       // Mock em.create: return a plain object with an id and sensible timestamp
       // defaults so the RunDto mapper can serialize the entity without TypeError.
-      create: vi.fn((_cls, data) => ({
+      create: vi.fn((_cls: unknown, data: Record<string, unknown>) => ({
         id: data.id ?? 'auto',
         requestedAt: new Date(),
         startedAt: null,
@@ -33,17 +53,17 @@ describe('RunService', () => {
         ...data,
       })),
       flush: vi.fn().mockResolvedValue(undefined),
-      transactional: vi.fn(async (fn: any) => fn(em)),
+      transactional: vi.fn(async (fn: (em: unknown) => unknown) => fn(em)),
     };
     service = new RunService(
-      em,
-      deploymentRepository,
-      testCaseRepository,
-      testCaseMappingRepository,
-      testRunRepository,
-      testRunItemRepository,
-      publisher as any,
-      storage as any,
+      mock<EntityManager>(em),
+      mock<DeploymentRepository>(deploymentRepository),
+      mock<TestCaseRepository>(testCaseRepository),
+      mock<TestCaseMappingRepository>(testCaseMappingRepository),
+      mock<TestRunRepository>(testRunRepository),
+      mock<TestRunItemRepository>(testRunItemRepository),
+      mock<RunQueuePublisher>(publisher),
+      mock<ObjectStorageClient>(storage),
       'http://admin:3000',
     );
   });
@@ -77,12 +97,12 @@ describe('RunService', () => {
     await service.create({ testCaseIds: ['TC-1'] });
 
     const itemCreateCalls = em.create.mock.calls.filter(
-      (call: any[]) => call[1].paramsSnapshot !== undefined,
+      (call: unknown[]) => (call[1] as Record<string, unknown>).paramsSnapshot !== undefined,
     );
     expect(itemCreateCalls).toHaveLength(1);
-    expect(itemCreateCalls[0][1].paramsSnapshot).toEqual({ qty: 2 });
-    expect(itemCreateCalls[0][1].expectedSnapshot).toEqual({ count: 2 });
-    expect(itemCreateCalls[0][1].status).toBe(RunItemStatus.Pending);
+    expect(itemCreateCalls[0]![1].paramsSnapshot).toEqual({ qty: 2 });
+    expect(itemCreateCalls[0]![1].expectedSnapshot).toEqual({ count: 2 });
+    expect(itemCreateCalls[0]![1].status).toBe(RunItemStatus.Pending);
   });
 
   it('create — merges paramOverrides on top of the pinned snapshot', async () => {
@@ -102,7 +122,7 @@ describe('RunService', () => {
     });
 
     const itemCreateCall = em.create.mock.calls.find(
-      (call: any[]) => call[1].paramsSnapshot !== undefined,
+      (call: unknown[]) => (call[1] as Record<string, unknown>).paramsSnapshot !== undefined,
     );
     expect(itemCreateCall![1].paramsSnapshot).toEqual({ qty: 5 });
   });

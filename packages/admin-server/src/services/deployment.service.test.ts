@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { EntityManager } from '@mikro-orm/mysql';
 import { DeploymentService } from './deployment.service.js';
 import { DeploymentStatus } from '@platform/shared';
+import type { DeploymentRepository } from '../repositories/deployment.repository.js';
+import type { TestFileRepository } from '../repositories/test-file.repository.js';
+import type { DeployTrigger } from '../deploy/deploy-trigger.js';
+import { mock } from '../testing/mock.js';
 
 // Minimal entity-like fixture for tests; shape matches Deployment entity fields used by the mapper.
 const makeDeployment = (overrides: Partial<Record<string, unknown>> = {}) => ({
@@ -36,10 +41,10 @@ describe('DeploymentService', () => {
       create: vi.fn((_cls, data) => ({ ...makeDeployment(), ...data })),
     };
     service = new DeploymentService(
-      em as any,
-      deploymentRepository as any,
-      testFileRepository as any,
-      trigger as any,
+      mock<EntityManager>(em),
+      mock<DeploymentRepository>(deploymentRepository),
+      mock<TestFileRepository>(testFileRepository),
+      mock<DeployTrigger>(trigger),
     );
   });
 
