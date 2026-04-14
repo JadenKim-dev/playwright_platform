@@ -69,7 +69,8 @@ describe('GET /api/deployments', () => {
       { gitRef: 'main', status: DeploymentStatus.Success } as Partial<Deployment>,
       { partial: true },
     );
-    await em.persistAndFlush(dep);
+    em.persist(dep);
+    await em.flush();
 
     const { GET } = await import('../../src/app/api/deployments/route.js');
     const res = await GET(new NextRequest('http://localhost/api/deployments'));

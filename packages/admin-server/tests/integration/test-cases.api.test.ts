@@ -24,7 +24,8 @@ async function seedTestCase(id: string, name: string, tags: string[] = []): Prom
     { id, name, params: {}, expected: {}, tags, autoCreated: true },
     { partial: true },
   );
-  await em.persistAndFlush(tc);
+  em.persist(tc);
+  await em.flush();
 }
 
 describe('GET /api/test-cases', () => {

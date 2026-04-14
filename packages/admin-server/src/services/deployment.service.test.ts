@@ -21,7 +21,11 @@ describe('DeploymentService', () => {
   };
   let fileRepo: { findByDeploymentId: ReturnType<typeof vi.fn> };
   let trigger: { trigger: ReturnType<typeof vi.fn> };
-  let em: { persistAndFlush: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };
+  let em: {
+    persist: ReturnType<typeof vi.fn>;
+    flush: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+  };
   let service: DeploymentService;
 
   beforeEach(() => {
@@ -29,7 +33,8 @@ describe('DeploymentService', () => {
     fileRepo = { findByDeploymentId: vi.fn() };
     trigger = { trigger: vi.fn().mockResolvedValue(undefined) };
     em = {
-      persistAndFlush: vi.fn().mockResolvedValue(undefined),
+      persist: vi.fn(),
+      flush: vi.fn().mockResolvedValue(undefined),
       create: vi.fn((_cls, data) => ({ ...makeDep(), ...data })),
     };
     service = new DeploymentService(
@@ -44,7 +49,8 @@ describe('DeploymentService', () => {
     const dto = await service.create({ gitRef: 'feature/x' });
 
     expect(em.create).toHaveBeenCalled();
-    expect(em.persistAndFlush).toHaveBeenCalledOnce();
+    expect(em.persist).toHaveBeenCalledOnce();
+    expect(em.flush).toHaveBeenCalledOnce();
     expect(trigger.trigger).toHaveBeenCalledWith({ deploymentId: dto.id, gitRef: 'feature/x' });
     expect(dto.gitRef).toBe('feature/x');
     expect(dto.status).toBe(DeploymentStatus.Pending);
@@ -53,7 +59,8 @@ describe('DeploymentService', () => {
   it('create — keeps the deployment row (pending) even if the trigger fails', async () => {
     trigger.trigger.mockRejectedValue(new Error('deploy down'));
     await expect(service.create({ gitRef: 'main' })).rejects.toThrow('deploy down');
-    expect(em.persistAndFlush).toHaveBeenCalledOnce();
+    expect(em.persist).toHaveBeenCalledOnce();
+    expect(em.flush).toHaveBeenCalledOnce();
   });
 
   it('list — delegates pagination to the repository', async () => {
