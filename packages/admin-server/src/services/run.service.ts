@@ -81,7 +81,6 @@ export class RunService {
       },
       { partial: true },
     );
-    this.em.persist(run);
 
     const items: TestRunItem[] = [];
     for (const tcId of dto.testCaseIds) {
@@ -102,7 +101,6 @@ export class RunService {
         },
         { partial: true },
       );
-      this.em.persist(item);
       items.push(item);
     }
     await this.em.flush();

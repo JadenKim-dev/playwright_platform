@@ -32,7 +32,6 @@ describe('RunService', () => {
         playwrightReportKey: null,
         ...data,
       })),
-      persist: vi.fn(),
       flush: vi.fn().mockResolvedValue(undefined),
       transactional: vi.fn(async (fn: any) => fn(em)),
     };
