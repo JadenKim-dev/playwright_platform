@@ -10,7 +10,8 @@ import type { DeploymentRepository } from '../repositories/deployment.repository
 import type { TestFileRepository } from '../repositories/test-file.repository';
 import type { DeployTrigger } from '../deploy/deploy-trigger';
 import { ApiError } from '../app/api/_lib/error-handler';
-import { toDeploymentDto, toTestFileDto } from './mappers';
+import { toDeploymentDto } from '../entities/deployment.mapper';
+import { toTestFileDto } from '../entities/test-file.mapper';
 
 export class DeploymentService {
   constructor(

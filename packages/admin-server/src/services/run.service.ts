@@ -17,7 +17,8 @@ import type { TestRunItemRepository } from '../repositories/test-run-item.reposi
 import type { RunQueuePublisher } from '../queue/run-queue-publisher';
 import type { ObjectStorageClient } from '../storage/object-storage-client';
 import { ApiError } from '../app/api/_lib/error-handler';
-import { toRunDto, toRunItemDto } from './mappers';
+import { toRunDto } from '../entities/test-run.mapper';
+import { toRunItemDto } from '../entities/test-run-item.mapper';
 
 // Presigned report URLs stay valid long enough for the UI to open the report
 // without being so long that a leaked URL is a durable hazard.

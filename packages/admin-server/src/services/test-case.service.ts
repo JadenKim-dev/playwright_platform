@@ -4,7 +4,7 @@ import type { TestCaseRepository } from '../repositories/test-case.repository';
 import type { TestCaseMappingRepository } from '../repositories/test-case-mapping.repository';
 import type { DeploymentRepository } from '../repositories/deployment.repository';
 import { ApiError } from '../app/api/_lib/error-handler';
-import { toTestCaseDto } from './mappers';
+import { toTestCaseDto } from '../entities/test-case.mapper';
 
 export interface TestCaseListParams {
   q?: string;
