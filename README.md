@@ -45,3 +45,18 @@ pnpm test        # Test the entire workspace
 pnpm lint        # ESLint
 pnpm format      # Prettier
 ```
+
+## Phase 3a: admin-server core
+
+```bash
+# Unit tests (mock-based, fast)
+pnpm --filter @platform/admin-server test:unit
+
+# Integration tests (testcontainers MySQL — first run downloads the image)
+pnpm --filter @platform/admin-server test:integration
+
+# Type check
+pnpm --filter @platform/admin-server exec tsc --noEmit -p tsconfig.json
+```
+
+`POST /api/deployments` and `POST /api/runs` work end-to-end against the database; the deploy-server call and RabbitMQ publish are no-op stubs in Phase 3a (real wiring lands in Phase 3b).

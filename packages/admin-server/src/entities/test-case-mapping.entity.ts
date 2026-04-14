@@ -1,0 +1,22 @@
+import { Entity, PrimaryKey, ManyToOne, Unique, Index } from '@mikro-orm/core';
+import { v4 as uuidv4 } from 'uuid';
+import { Deployment } from './deployment.entity';
+import { TestCase } from './test-case.entity';
+import { TestFile } from './test-file.entity';
+
+@Entity({ tableName: 'test_case_mappings' })
+@Unique({ properties: ['deployment', 'testCase'] })
+@Index({ properties: ['testCase'] })
+export class TestCaseMapping {
+  @PrimaryKey({ type: 'string', length: 36 })
+  id: string = uuidv4();
+
+  @ManyToOne(() => Deployment, { fieldName: 'deployment_id', deleteRule: 'cascade' })
+  deployment!: Deployment;
+
+  @ManyToOne(() => TestCase, { fieldName: 'test_case_id', deleteRule: 'restrict' })
+  testCase!: TestCase;
+
+  @ManyToOne(() => TestFile, { fieldName: 'test_file_id', deleteRule: 'cascade' })
+  testFile!: TestFile;
+}

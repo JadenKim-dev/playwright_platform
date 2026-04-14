@@ -3,6 +3,7 @@ node_modules/
 dist/
 build/
 .next/
+next-env.d.ts
 coverage/
 *.tsbuildinfo
 
@@ -14,6 +15,8 @@ coverage/
 
 # MikroORM
 migrations/.snapshot-*
+# ts-morph metadata cache emitted by TsMorphMetadataProvider
+temp/
 
 # Logs
 npm-debug.log*
