@@ -94,7 +94,7 @@ erDiagram
     TestEvent {
         bigint   id PK
         string   test_run_id FK
-        string   test_run_item_id FK "nullable"
+        string   test_run_item_id FK
         enum     eventType
         json     payload
         datetime emittedAt

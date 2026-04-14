@@ -101,7 +101,7 @@ export class Migration00000000000001 extends Migration {
       create table \`test_events\` (
         \`id\` bigint not null auto_increment,
         \`test_run_id\` varchar(36) not null,
-        \`test_run_item_id\` varchar(36) null,
+        \`test_run_item_id\` varchar(36) not null,
         \`event_type\` varchar(32) not null,
         \`payload\` json not null,
         \`emitted_at\` datetime(3) not null default CURRENT_TIMESTAMP(3),

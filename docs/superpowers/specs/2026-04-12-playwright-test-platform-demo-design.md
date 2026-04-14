@@ -195,7 +195,7 @@ services:
 **`test_events`** — 스트리밍 리포터의 원시 이벤트
 
 - `id` (bigint auto_increment, PK)
-- `test_run_id` (FK), `test_run_item_id` (FK, nullable)
+- `test_run_id` (FK), `test_run_item_id` (FK)
 - `event_type` — `test_begin | test_end | step_begin | step_end | stdout | stderr`
 - `payload` (JSON)
 - `emitted_at`
@@ -264,7 +264,7 @@ services:
 ├─────────────────────────────────────────────────────┤
 │ PK  id (bigint auto_inc)                            │
 │ FK  test_run_id                                     │
-│ FK  test_run_item_id (nullable)                     │
+│ FK  test_run_item_id                                │
 │     event_type                                      │
 │     payload (JSON)                                 │
 │     emitted_at                                      │

@@ -13,9 +13,8 @@ export class TestEvent {
   @ManyToOne(() => TestRun, { fieldName: 'test_run_id', deleteRule: 'cascade' })
   testRun!: TestRun;
 
-  // Nullable because some events (e.g., run-level stdout) may not tie to a specific item.
-  @ManyToOne(() => TestRunItem, { fieldName: 'test_run_item_id', deleteRule: 'cascade', nullable: true })
-  testRunItem: TestRunItem | null = null;
+  @ManyToOne(() => TestRunItem, { fieldName: 'test_run_item_id', deleteRule: 'cascade' })
+  testRunItem!: TestRunItem;
 
   @Enum({ items: () => Object.values(ReporterEventType), type: 'string' })
   eventType!: ReporterEventType;
