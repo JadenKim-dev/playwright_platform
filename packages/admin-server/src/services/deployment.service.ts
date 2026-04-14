@@ -15,9 +15,9 @@ import { toDeploymentDto, toTestFileDto } from './mappers';
 export class DeploymentService {
   constructor(
     private readonly em: EntityManager,
-    private readonly deployments: DeploymentRepository,
-    private readonly files: TestFileRepository,
-    private readonly trigger: DeployTrigger,
+    private readonly deploymentRepository: DeploymentRepository,
+    private readonly testFileRepository: TestFileRepository,
+    private readonly deployTrigger: DeployTrigger,
   ) {}
 
   async list(query: {
@@ -25,7 +25,7 @@ export class DeploymentService {
     page?: number;
     pageSize?: number;
   }): Promise<{ items: DeploymentDto[]; total: number }> {
-    const { items, total } = await this.deployments.list({
+    const { items, total } = await this.deploymentRepository.list({
       status: query.status,
       page: query.page,
       pageSize: query.pageSize,
@@ -34,7 +34,7 @@ export class DeploymentService {
   }
 
   async getById(id: string): Promise<DeploymentDto> {
-    const dep = await this.deployments.findById(id);
+    const dep = await this.deploymentRepository.findById(id);
     if (!dep) throw new ApiError(404, `deployment ${id} not found`, 'not_found');
     return toDeploymentDto(dep);
   }
@@ -45,14 +45,14 @@ export class DeploymentService {
     const dep = this.em.create(Deployment, { gitRef: dto.gitRef }, { partial: true });
     this.em.persist(dep);
     await this.em.flush();
-    await this.trigger.trigger({ deploymentId: dep.id, gitRef: dep.gitRef });
+    await this.deployTrigger.trigger({ deploymentId: dep.id, gitRef: dep.gitRef });
     return toDeploymentDto(dep);
   }
 
   async listTestFiles(deploymentId: string): Promise<TestFileDto[]> {
-    const dep = await this.deployments.findById(deploymentId);
+    const dep = await this.deploymentRepository.findById(deploymentId);
     if (!dep) throw new ApiError(404, `deployment ${deploymentId} not found`, 'not_found');
-    const files = await this.files.findByDeploymentId(deploymentId);
+    const files = await this.testFileRepository.findByDeploymentId(deploymentId);
     return files.map(toTestFileDto);
   }
 }

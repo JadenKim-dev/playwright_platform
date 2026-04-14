@@ -17,13 +17,13 @@ export interface TestCaseListParams {
 export class TestCaseService {
   constructor(
     private readonly em: EntityManager,
-    private readonly testCases: TestCaseRepository,
-    private readonly mappings: TestCaseMappingRepository,
-    private readonly deployments: DeploymentRepository,
+    private readonly testCaseRepository: TestCaseRepository,
+    private readonly testCaseMappingRepository: TestCaseMappingRepository,
+    private readonly deploymentRepository: DeploymentRepository,
   ) {}
 
   async list(query: TestCaseListParams): Promise<{ items: TestCaseDto[]; total: number }> {
-    const { items, total } = await this.testCases.listWithFilter({
+    const { items, total } = await this.testCaseRepository.listWithFilter({
       q: query.q,
       tag: query.tag,
       page: query.page,
@@ -39,14 +39,14 @@ export class TestCaseService {
   }
 
   async getById(id: string): Promise<TestCaseDto> {
-    const entity = await this.testCases.findById(id);
+    const entity = await this.testCaseRepository.findById(id);
     if (!entity) throw new ApiError(404, `test case ${id} not found`, 'not_found');
     const activeIds = await this.computeActiveIds();
     return toTestCaseDto(entity, activeIds.has(id));
   }
 
   async patch(id: string, patch: TestCasePatchDto): Promise<TestCaseDto> {
-    const entity = await this.testCases.findById(id);
+    const entity = await this.testCaseRepository.findById(id);
     if (!entity) throw new ApiError(404, `test case ${id} not found`, 'not_found');
     if (patch.name !== undefined) entity.name = patch.name;
     if (patch.description !== undefined) entity.description = patch.description;
@@ -59,16 +59,16 @@ export class TestCaseService {
   }
 
   async listRunnable(): Promise<TestCaseDto[]> {
-    const dep = await this.deployments.findLatestSuccess();
+    const dep = await this.deploymentRepository.findLatestSuccess();
     if (!dep) return [];
-    const mappings = await this.mappings.findByDeploymentId(dep.id);
+    const mappings = await this.testCaseMappingRepository.findByDeploymentId(dep.id);
     return mappings.map((m) => toTestCaseDto(m.testCase, true));
   }
 
   private async computeActiveIds(): Promise<Set<string>> {
-    const dep = await this.deployments.findLatestSuccess();
+    const dep = await this.deploymentRepository.findLatestSuccess();
     if (!dep) return new Set();
-    const mappings = await this.mappings.findByDeploymentId(dep.id);
+    const mappings = await this.testCaseMappingRepository.findByDeploymentId(dep.id);
     return new Set(mappings.map((m) => m.testCase.id));
   }
 }

@@ -26,13 +26,13 @@ const REPORT_URL_TTL_SECONDS = 60 * 10;
 export class RunService {
   constructor(
     private readonly em: EntityManager,
-    private readonly deployments: DeploymentRepository,
-    private readonly testCases: TestCaseRepository,
-    private readonly mappings: TestCaseMappingRepository,
-    private readonly runs: TestRunRepository,
-    private readonly runItems: TestRunItemRepository,
-    private readonly publisher: RunQueuePublisher,
-    private readonly storage: ObjectStorageClient,
+    private readonly deploymentRepository: DeploymentRepository,
+    private readonly testCaseRepository: TestCaseRepository,
+    private readonly testCaseMappingRepository: TestCaseMappingRepository,
+    private readonly testRunRepository: TestRunRepository,
+    private readonly testRunItemRepository: TestRunItemRepository,
+    private readonly runQueuePublisher: RunQueuePublisher,
+    private readonly objectStorageClient: ObjectStorageClient,
     private readonly adminBaseUrl: string,
   ) {}
 
@@ -43,19 +43,22 @@ export class RunService {
 
     // Spec §6.2: a run always executes against the latest successful deployment
     // so the bundle key and TC mapping line up with what worker nodes can fetch.
-    const dep = await this.deployments.findLatestSuccess();
+    const dep = await this.deploymentRepository.findLatestSuccess();
     if (!dep) {
       throw new ApiError(409, 'no successful deployment available', 'no_deployment');
     }
 
-    const tcs = await this.testCases.findByIds(dto.testCaseIds);
+    const tcs = await this.testCaseRepository.findByIds(dto.testCaseIds);
     const tcById = new Map(tcs.map((t) => [t.id, t]));
     const missingTcs = dto.testCaseIds.filter((id) => !tcById.has(id));
     if (missingTcs.length > 0) {
       throw new ApiError(400, `unknown test cases: ${missingTcs.join(',')}`, 'unknown_tc');
     }
 
-    const mappings = await this.mappings.findByDeploymentAndTcs(dep.id, dto.testCaseIds);
+    const mappings = await this.testCaseMappingRepository.findByDeploymentAndTcs(
+      dep.id,
+      dto.testCaseIds,
+    );
     const mapByTc = new Map(mappings.map((m) => [m.testCase.id, m]));
     const unmapped = dto.testCaseIds.filter((id) => !mapByTc.has(id));
     if (unmapped.length > 0) {
@@ -115,7 +118,7 @@ export class RunService {
         testFileBundleKey: item.testFile.bundleKey,
         adminBaseUrl: this.adminBaseUrl,
       };
-      await this.publisher.publish(message);
+      await this.runQueuePublisher.publish(message);
     }
 
     return toRunDto(run);
@@ -125,31 +128,34 @@ export class RunService {
     page?: number;
     pageSize?: number;
   }): Promise<{ items: RunDto[]; total: number }> {
-    const { items, total } = await this.runs.list(query);
+    const { items, total } = await this.testRunRepository.list(query);
     return { items: items.map(toRunDto), total };
   }
 
   async getById(id: string): Promise<{ run: RunDto; items: RunItemDto[] }> {
-    const run = await this.runs.findById(id);
+    const run = await this.testRunRepository.findById(id);
     if (!run) throw new ApiError(404, `run ${id} not found`, 'not_found');
-    const items = await this.runItems.findByRunId(id);
+    const items = await this.testRunItemRepository.findByRunId(id);
     return { run: toRunDto(run), items: items.map(toRunItemDto) };
   }
 
   async getReportUrl(id: string): Promise<string> {
-    const run = await this.runs.findById(id);
+    const run = await this.testRunRepository.findById(id);
     if (!run) throw new ApiError(404, `run ${id} not found`, 'not_found');
     if (!run.playwrightReportKey) {
       throw new ApiError(404, 'report not ready', 'no_report');
     }
-    return this.storage.presignedGetUrl(run.playwrightReportKey, REPORT_URL_TTL_SECONDS);
+    return this.objectStorageClient.presignedGetUrl(
+      run.playwrightReportKey,
+      REPORT_URL_TTL_SECONDS,
+    );
   }
 
   async listRunsForTestCase(testCaseId: string): Promise<RunDto[]> {
-    const items = await this.runItems.findByTestCaseId(testCaseId);
+    const items = await this.testRunItemRepository.findByTestCaseId(testCaseId);
     // Dedup run ids — a TC can appear multiple times across the same run's history.
     const uniqueIds = [...new Set(items.map((i) => i.testRun.id))];
-    const runs = await this.runs.findByIds(uniqueIds);
+    const runs = await this.testRunRepository.findByIds(uniqueIds);
     return runs.map(toRunDto);
   }
 }

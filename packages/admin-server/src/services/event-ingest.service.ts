@@ -14,15 +14,15 @@ import { ApiError } from '../app/api/_lib/error-handler';
 export class EventIngestService {
   constructor(
     private readonly em: EntityManager,
-    private readonly runs: TestRunRepository,
-    private readonly runItems: TestRunItemRepository,
-    private readonly events: TestEventRepository,
+    private readonly testRunRepository: TestRunRepository,
+    private readonly testRunItemRepository: TestRunItemRepository,
+    private readonly testEventRepository: TestEventRepository,
   ) {}
 
   async appendEvents(runId: string, batch: ReporterEventBatch): Promise<void> {
-    const run = await this.runs.findById(runId);
+    const run = await this.testRunRepository.findById(runId);
     if (!run) throw new ApiError(404, `run ${runId} not found`, 'not_found');
-    await this.events.insertBatch(runId, batch.events);
+    await this.testEventRepository.insertBatch(runId, batch.events);
     await this.em.flush();
   }
 
@@ -31,7 +31,7 @@ export class EventIngestService {
     itemId: string,
     update: RunItemStatusUpdateDto,
   ): Promise<void> {
-    const item = await this.runItems.findById(itemId);
+    const item = await this.testRunItemRepository.findById(itemId);
     if (!item) throw new ApiError(404, `run item ${itemId} not found`, 'not_found');
     // Defense-in-depth: a malformed route must not mutate a sibling run's item.
     if (item.testRun.id !== runId) {
@@ -45,9 +45,9 @@ export class EventIngestService {
   }
 
   async completeRun(runId: string, body: RunCompleteDto): Promise<void> {
-    const run = await this.runs.findById(runId);
+    const run = await this.testRunRepository.findById(runId);
     if (!run) throw new ApiError(404, `run ${runId} not found`, 'not_found');
-    const items = await this.runItems.findByRunId(runId);
+    const items = await this.testRunItemRepository.findByRunId(runId);
     run.status = this.rollupStatus(items.map((i) => i.status));
     run.finishedAt = new Date();
     if (body.playwrightReportKey !== undefined) {
