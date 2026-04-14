@@ -11,7 +11,14 @@
     "build": "pnpm -r --filter ./packages/** build",
     "test": "pnpm -r --filter ./packages/** test",
     "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "vitest related --run"
+    ]
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
@@ -19,6 +26,8 @@
     "@typescript-eslint/parser": "^8.6.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",
     "vitest": "^2.1.1"
