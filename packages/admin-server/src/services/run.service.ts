@@ -20,8 +20,10 @@ import { ApiError } from '../app/api/_lib/error-handler';
 import { toRunDto } from '../entities/test-run.mapper';
 import { toRunItemDto } from '../entities/test-run-item.mapper';
 
-// Presigned report URLs stay valid long enough for the UI to open the report
-// without being so long that a leaked URL is a durable hazard.
+/**
+ * Presigned report URLs stay valid long enough for the UI to open the report
+ * without being so long that a leaked URL is a durable hazard.
+ */
 const REPORT_URL_TTL_SECONDS = 60 * 10;
 
 export class RunService {

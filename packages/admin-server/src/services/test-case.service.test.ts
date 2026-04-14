@@ -7,7 +7,9 @@ import type { TestCaseMappingRepository } from '../repositories/test-case-mappin
 import type { DeploymentRepository } from '../repositories/deployment.repository.js';
 import { mock } from '../testing/mock.js';
 
-// Minimal entity-like fixture for tests; shape matches TestCase entity fields used by the mapper.
+/**
+ * Minimal entity-like fixture for tests; shape matches `TestCase` entity fields used by the mapper.
+ */
 const makeEntity = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: 'TC-001',
   name: 'cart add',
